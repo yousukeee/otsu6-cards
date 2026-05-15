@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#0f172a"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="乙6単語帳"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon-192.png"/>
+  <title>消防設備士乙6 単語帳</title>
+  <style>
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    html,body,#root{height:100%;margin:0;padding:0;background:#0f172a;}
+    body{overscroll-behavior:none;}
+    textarea,select,input{font-family:inherit;}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+const CATEGORIES = ["消火器の種類","消火薬剤","設置基準","点検・整備","関係法令","構造・機能"];
+
+const SAMPLE_CARDS = [
+  { id:1, front:"粉末消火器（ABC粉末）の主成分は？", back:"リン酸アンモニウム（第一リン酸アンモニウム）", category:"消火薬剤", status:"new" },
+  { id:2, front:"強化液消火器の消火薬剤は？", back:"炭酸カリウムの水溶液（アルカリ性）", category:"消火薬剤", status:"new" },
+  { id:3, front:"消火器の設置が必要な防火対象物の延べ面積の基準は？（一般的な場合）", back:"延べ面積150㎡以上", category:"設置基準", status:"new" },
+  { id:4, front:"消火器の歩行距離による設置基準は？", back:"歩行距離20m以下ごとに1本", category:"設置基準", status:"new" },
+  { id:5, front:"消火器の外観点検の実施頻度は？", back:"6ヶ月に1回", category:"点検・整備", status:"new" },
+  { id:6, front:"加圧式粉末消火器の機能点検の実施頻度は？", back:"製造年から3年ごと（その後5年ごと）", category:"点検・整備", status:"new" },
+  { id:7, front:"二酸化炭素消火器（CO₂）が使用できない場所は？", back:"密閉された狭い空間（窒息危険）", category:"消火器の種類", status:"new" },
+  { id:8, front:"泡消火器の主な用途は？", back:"A火災（普通）・B火災（油）に有効。電気火災（C火災）には使用不可", category:"消火器の種類", status:"new" },
+  { id:9, front:"蓄圧式消火器と加圧式消火器の違いは？", back:"蓄圧式：常時加圧ガスが入っている。加圧式：使用時に内部のガス加圧用容器が破封される", category:"構造・機能", status:"new" },
+  { id:10, front:"消火器のラベルに記載が必要な事項を3つ挙げよ", back:"①種類・型式番号 ②使用方法 ③使用温度範囲", category:"関係法令", status:"new" },
+];
+
+const STATUS = {
+  new:     { label:"未学習",     color:"#64748b" },
+  correct: { label:"正解 ◎",    color:"#22c55e" },
+  unsure:  { label:"あいまい △", color:"#f59e0b" },
+  wrong:   { label:"不正解 ✗",  color:"#ef4444" },
+};
+
+/* ── localStorage ── */
+const STORE_KEY = "otsu6_cards_v1";
+function loadCards() {
+  try { const d = localStorage.getItem(STORE_KEY); return d ? JSON.parse(d) : SAMPLE_CARDS; }
+  catch { return SAMPLE_CARDS; }
+}
+function saveCards(cards) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(cards)); } catch {}
+}
+
+/* ── FlipCard ── */
+function FlipCard({ card, flipped, onFlip }) {
+  return (
+    <div onClick={onFlip} style={{ perspective:"1400px", width:"100%", height:"100%", cursor:"pointer", userSelect:"none" }}>
+      <div style={{
+        position:"relative", width:"100%", height:"100%",
+        transformStyle:"preserve-3d",
+        transition:"transform 0.45s cubic-bezier(0.4,0,0.2,1)",
+        transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+      }}>
+        <div style={{
+          position:"absolute", inset:0, backfaceVisibility:"hidden", WebkitBackfaceVisibility:"hidden",
+          background:"linear-gradient(150deg,#1e2d45 0%,#162035 100%)",
+          border:"1.5px solid #2d4a6e", borderRadius:20,
+          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"32px 24px",
+          boxShadow:"0 12px 40px rgba(0,0,0,0.5)",
+        }}>
+          <span style={{ fontSize:11, letterSpacing:3, color:"#e63946", fontWeight:800, marginBottom:24, textTransform:"uppercase" }}>{card.category}</span>
+          <p style={{ color:"#f0f4f8", fontSize:22, fontWeight:600, textAlign:"center", lineHeight:1.65, margin:0 }}>{card.front}</p>
+          <span style={{ position:"absolute", bottom:20, color:"#3a5a7a", fontSize:13 }}>👆 タップして答えを見る</span>
+        </div>
+        <div style={{
+          position:"absolute", inset:0, backfaceVisibility:"hidden", WebkitBackfaceVisibility:"hidden",
+          transform:"rotateY(180deg)",
+          background:"linear-gradient(150deg,#1a3a2e 0%,#112a20 100%)",
+          border:"1.5px solid #2d6a4f", borderRadius:20,
+          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"32px 24px",
+          boxShadow:"0 12px 40px rgba(0,0,0,0.5)",
+        }}>
+          <span style={{ fontSize:11, letterSpacing:3, color:"#22c55e", fontWeight:800, marginBottom:24, textTransform:"uppercase" }}>答え</span>
+          <p style={{ color:"#d1fae5", fontSize:20, fontWeight:500, textAlign:"center", lineHeight:1.75, margin:0 }}>{card.back}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── 学習画面 ── */
+function StudyScreen({ allCards, onUpdateStatus, onExit }) {
+  const [filterCat, setFilterCat] = useState("すべて");
+  const [phase, setPhase] = useState("select");
+  const [queue, setQueue] = useState([]);
+  const [idx, setIdx] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const touchStart = useRef(null);
+
+  function startQuiz() {
+    const pool = allCards.filter(c => (filterCat==="すべて"||c.category===filterCat) && c.status!=="correct");
+    if (!pool.length) { setPhase("done"); return; }
+    setQueue(pool); setIdx(0); setFlipped(false); setPhase("quiz");
+  }
+
+  function judge(status) {
+    onUpdateStatus(queue[idx].id, status);
+    const next = idx+1;
+    if (next>=queue.length) setPhase("done");
+    else { setIdx(next); setFlipped(false); }
+  }
+
+  function handleTouchStart(e) { touchStart.current = e.touches[0].clientX; }
+  function handleTouchEnd(e) {
+    if (!flipped||touchStart.current===null) return;
+    const dx = e.changedTouches[0].clientX - touchStart.current;
+    if (dx>60) judge("correct");
+    else if (dx<-60) judge("wrong");
+    touchStart.current = null;
+  }
+
+  if (phase==="select") {
+    const cats = ["すべて",...CATEGORIES];
+    return (
+      <div style={overlayStyle}>
+        <div style={overlayHeader}>
+          <button onClick={onExit} style={backBtn}>‹</button>
+          <span style={overlayTitle}>学習モード</span>
+        </div>
+        <div style={{ flex:1, overflowY:"auto", padding:"24px 20px" }}>
+          <p style={{ color:"#94a3b8", fontSize:14, marginBottom:20 }}>
+            カテゴリを選んで学習スタート<br/>
+            <span style={{ color:"#e63946", fontWeight:700 }}>
+              未習得 {allCards.filter(c=>c.status!=="correct").length}枚
+            </span> が出題されます
+          </p>
+          <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:28 }}>
+            {cats.map(c => {
+              const cnt = allCards.filter(card=>(c==="すべて"||card.category===c)&&card.status!=="correct").length;
+              return (
+                <button key={c} onClick={()=>setFilterCat(c)} style={{
+                  padding:"16px 20px", borderRadius:14, cursor:"pointer", textAlign:"left",
+                  display:"flex", justifyContent:"space-between", alignItems:"center",
+                  background: filterCat===c?"#e63946":"#1e2d45",
+                  border: filterCat===c?"none":"1px solid #2d4a6e",
+                  color:"#f0f4f8", fontSize:16, fontWeight:filterCat===c?700:400,
+                }}>
+                  <span>{c}</span>
+                  <span style={{ fontSize:13, opacity:0.75 }}>{cnt}枚</span>
+                </button>
+              );
+            })}
+          </div>
+          <button onClick={startQuiz} style={{ ...bigBtn("#e63946"), width:"100%", fontSize:18, padding:"18px" }}>
+            ▶ スタート
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase==="done") return (
+    <div style={{ ...overlayStyle, alignItems:"center", justifyContent:"center" }}>
+      <div style={{ textAlign:"center", padding:32 }}>
+        <div style={{ fontSize:72, marginBottom:16 }}>🎉</div>
+        <h2 style={{ color:"#22c55e", fontSize:26, marginBottom:8 }}>完了！</h2>
+        <p style={{ color:"#94a3b8", marginBottom:40, fontSize:16 }}>{queue.length}枚を学習しました</p>
+        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+          <button onClick={()=>setPhase("select")} style={{ ...bigBtn("#1d4ed8"), width:"100%" }}>もう一度</button>
+          <button onClick={onExit} style={{ ...bigBtn("#334155"), width:"100%" }}>ホームに戻る</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const current = queue[idx];
+  return (
+    <div style={overlayStyle} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      <div style={{ padding:"14px 20px", display:"flex", alignItems:"center", gap:12, flexShrink:0 }}>
+        <button onClick={onExit} style={backBtn}>‹</button>
+        <div style={{ flex:1, background:"#1e2d45", borderRadius:4, height:6, overflow:"hidden" }}>
+          <div style={{ width:`${(idx/queue.length)*100}%`, height:"100%", background:"linear-gradient(90deg,#e63946,#f59e0b)", transition:"width 0.3s" }} />
+        </div>
+        <span style={{ color:"#64748b", fontSize:14, minWidth:48, textAlign:"right" }}>{idx+1}/{queue.length}</span>
+      </div>
+      <div style={{ flex:1, padding:"8px 20px 0" }}>
+        <FlipCard card={current} flipped={flipped} onFlip={()=>setFlipped(f=>!f)} />
+      </div>
+      <div style={{ padding:"20px", paddingBottom:"calc(20px + env(safe-area-inset-bottom))", flexShrink:0 }}>
+        {flipped ? (
+          <>
+            <p style={{ color:"#3a5a7a", fontSize:12, textAlign:"center", marginBottom:12 }}>← スワイプで不正解　　正解でスワイプ →</p>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
+              <button onClick={()=>judge("wrong")} style={judgeBtn("#ef4444")}>✗<br/><span style={{fontSize:11}}>不正解</span></button>
+              <button onClick={()=>judge("unsure")} style={judgeBtn("#f59e0b")}>△<br/><span style={{fontSize:11}}>あいまい</span></button>
+              <button onClick={()=>judge("correct")} style={judgeBtn("#22c55e")}>◎<br/><span style={{fontSize:11}}>正解</span></button>
+            </div>
+          </>
+        ) : (
+          <button onClick={()=>setFlipped(true)} style={{ ...bigBtn("#1e2d45"), width:"100%", border:"1px solid #2d4a6e" }}>
+            答えを見る 👆
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── カードフォーム ── */
+function CardForm({ initial, onSave, onCancel }) {
+  const [front, setFront] = useState(initial?.front||"");
+  const [back, setBack] = useState(initial?.back||"");
+  const [category, setCategory] = useState(initial?.category||CATEGORIES[0]);
+  const ok = front.trim()&&back.trim();
+  return (
+    <div style={overlayStyle}>
+      <div style={overlayHeader}>
+        <button onClick={onCancel} style={backBtn}>‹</button>
+        <span style={overlayTitle}>{initial?"カードを編集":"カードを追加"}</span>
+      </div>
+      <div style={{ flex:1, overflowY:"auto", padding:"24px 20px" }}>
+        <div style={{ marginBottom:18 }}>
+          <label style={lbl}>カテゴリ</label>
+          <select value={category} onChange={e=>setCategory(e.target.value)} style={inp}>{CATEGORIES.map(c=><option key={c}>{c}</option>)}</select>
+        </div>
+        <div style={{ marginBottom:18 }}>
+          <label style={lbl}>おもて（問題）</label>
+          <textarea value={front} onChange={e=>setFront(e.target.value)} rows={4} style={{ ...inp, resize:"vertical" }} placeholder="例：粉末消火器の主成分は？" />
+        </div>
+        <div style={{ marginBottom:32 }}>
+          <label style={lbl}>うら（答え・解説）</label>
+          <textarea value={back} onChange={e=>setBack(e.target.value)} rows={4} style={{ ...inp, resize:"vertical" }} placeholder="例：リン酸アンモニウム" />
+        </div>
+        <button onClick={()=>ok&&onSave({front:front.trim(),back:back.trim(),category})}
+          style={{ ...bigBtn(ok?"#e63946":"#334155"), width:"100%", marginBottom:12, opacity:ok?1:0.5 }}>
+          保存する
+        </button>
+        <button onClick={onCancel} style={{ ...bigBtn("#1e2d45"), width:"100%", border:"1px solid #2d4a6e" }}>キャンセル</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── ホームタブ ── */
+function HomeTab({ cards, onStartStudy }) {
+  const total=cards.length, correct=cards.filter(c=>c.status==="correct").length;
+  const unsure=cards.filter(c=>c.status==="unsure").length, wrong=cards.filter(c=>c.status==="wrong").length;
+  const pct=total?Math.round((correct/total)*100):0;
+  const r=52, circ=2*Math.PI*r;
+
+  return (
+    <div style={{ flex:1, overflowY:"auto", padding:"20px 16px 100px" }}>
+      <div style={{ background:"linear-gradient(135deg,#1e2d45,#162035)", borderRadius:20, padding:"28px 24px", marginBottom:20, border:"1px solid #2d4a6e", textAlign:"center" }}>
+        <div style={{ position:"relative", display:"inline-flex", alignItems:"center", justifyContent:"center", width:130, height:130, marginBottom:16 }}>
+          <svg width="130" height="130" style={{ position:"absolute", transform:"rotate(-90deg)" }}>
+            <circle cx="65" cy="65" r={r} fill="none" stroke="#0f172a" strokeWidth="10"/>
+            <circle cx="65" cy="65" r={r} fill="none" stroke="#22c55e" strokeWidth="10"
+              strokeDasharray={circ} strokeDashoffset={circ*(1-pct/100)} strokeLinecap="round"
+              style={{ transition:"stroke-dashoffset 0.8s ease" }}/>
+          </svg>
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:30, fontWeight:800, color:"#f0f4f8", lineHeight:1 }}>{pct}%</div>
+            <div style={{ fontSize:11, color:"#64748b" }}>習得率</div>
+          </div>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:20 }}>
+          {[
+            {label:"◎ 正解",val:correct,color:"#22c55e"},
+            {label:"△ あいまい",val:unsure,color:"#f59e0b"},
+            {label:"✗ 不正解",val:wrong,color:"#ef4444"},
+            {label:"未学習",val:total-correct-unsure-wrong,color:"#64748b"},
+          ].map(s=>(
+            <div key={s.label} style={{ background:"#0f172a", borderRadius:10, padding:"10px 14px", textAlign:"left" }}>
+              <div style={{ color:s.color, fontSize:11, fontWeight:600, marginBottom:4 }}>{s.label}</div>
+              <div style={{ color:"#f0f4f8", fontSize:24, fontWeight:800 }}>{s.val}<span style={{ fontSize:13, color:"#64748b", fontWeight:400 }}>枚</span></div>
+            </div>
+          ))}
+        </div>
+        <button onClick={onStartStudy} style={{ ...bigBtn("#e63946"), width:"100%", fontSize:18, display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
+          <span>🔥</span> 学習スタート
+        </button>
+      </div>
+      <h3 style={{ color:"#64748b", fontSize:12, fontWeight:700, letterSpacing:2, marginBottom:12 }}>カテゴリ別進捗</h3>
+      <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+        {CATEGORIES.map(cat=>{
+          const cc=cards.filter(c=>c.category===cat);
+          if(!cc.length) return null;
+          const done=cc.filter(c=>c.status==="correct").length;
+          const p=Math.round((done/cc.length)*100);
+          return (
+            <div key={cat} style={{ background:"#1e2d45", borderRadius:12, padding:"14px 16px", border:"1px solid #2d4a6e" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+                <span style={{ color:"#f0f4f8", fontSize:14 }}>{cat}</span>
+                <span style={{ color:"#22c55e", fontSize:13, fontWeight:700 }}>{p}%</span>
+              </div>
+              <div style={{ background:"#0f172a", borderRadius:4, height:6, overflow:"hidden" }}>
+                <div style={{ width:`${p}%`, height:"100%", background:"linear-gradient(90deg,#e63946,#22c55e)", transition:"width 0.5s" }} />
+              </div>
+              <div style={{ color:"#4a6a8a", fontSize:11, marginTop:6 }}>{done}/{cc.length}枚</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── カード一覧タブ ── */
+function CardListTab({ cards, onEdit, onDelete, onResetAll }) {
+  const [filterCat, setFilterCat] = useState("すべて");
+  const [filterStatus, setFilterStatus] = useState("すべて");
+  const cats=["すべて",...CATEGORIES];
+  const statuses=["すべて",...Object.keys(STATUS)];
+  const filtered=cards.filter(c=>(filterCat==="すべて"||c.category===filterCat)&&(filterStatus==="すべて"||c.status===filterStatus));
+
+  return (
+    <div style={{ flex:1, overflowY:"hidden", display:"flex", flexDirection:"column" }}>
+      <div style={{ flexShrink:0, borderBottom:"1px solid #1e2d45" }}>
+        <div style={{ overflowX:"auto", padding:"10px 16px 0" }}>
+          <div style={{ display:"flex", gap:8, width:"max-content", paddingBottom:10 }}>
+            {cats.map(c=>(
+              <button key={c} onClick={()=>setFilterCat(c)} style={{
+                padding:"8px 16px", borderRadius:20, border:"none", cursor:"pointer", fontSize:14, whiteSpace:"nowrap",
+                background:filterCat===c?"#e63946":"#1e2d45", color:filterCat===c?"#fff":"#94a3b8", fontWeight:filterCat===c?700:400,
+              }}>{c}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ overflowX:"auto", padding:"0 16px 10px" }}>
+          <div style={{ display:"flex", gap:6, width:"max-content" }}>
+            {statuses.map(s=>(
+              <button key={s} onClick={()=>setFilterStatus(s)} style={{
+                padding:"5px 12px", borderRadius:20, fontSize:12, cursor:"pointer", whiteSpace:"nowrap",
+                border:filterStatus===s?"none":"1px solid #2d4a6e",
+                background:filterStatus===s?"#2d4a6e":"transparent",
+                color:filterStatus===s?"#f0f4f8":"#64748b",
+              }}>
+                {s==="すべて"?"すべて":STATUS[s].label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div style={{ overflowY:"auto", flex:1, padding:"10px 16px 100px" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+          <span style={{ color:"#64748b", fontSize:12 }}>{filtered.length}枚</span>
+          <button onClick={onResetAll} style={{ background:"none", border:"1px solid #334155", color:"#64748b", borderRadius:6, padding:"5px 12px", fontSize:12, cursor:"pointer" }}>全リセット</button>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          {filtered.map(card=>{
+            const st=STATUS[card.status]||STATUS.new;
+            return (
+              <div key={card.id} style={{ background:"#1e2d45", borderRadius:14, padding:"14px 16px", border:"1px solid #2d4a6e", borderLeft:`4px solid ${st.color}` }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ display:"flex", gap:6, marginBottom:6, flexWrap:"wrap" }}>
+                      <span style={{ fontSize:10, background:"#0f172a", color:"#94a3b8", padding:"2px 8px", borderRadius:10 }}>{card.category}</span>
+                      <span style={{ fontSize:10, color:st.color }}>{st.label}</span>
+                    </div>
+                    <p style={{ color:"#f0f4f8", margin:"0 0 4px", fontSize:14, fontWeight:500, lineHeight:1.5 }}>{card.front}</p>
+                    <p style={{ color:"#94a3b8", margin:0, fontSize:13, lineHeight:1.4 }}>{card.back}</p>
+                  </div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:4, marginLeft:12, flexShrink:0 }}>
+                    <button onClick={()=>onEdit(card)} style={iconBtn}>✏️</button>
+                    <button onClick={()=>onDelete(card.id)} style={iconBtn}>🗑️</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {!filtered.length && (
+            <div style={{ textAlign:"center", color:"#4a6a8a", padding:"60px 20px" }}>
+              カードがありません。<br/>「追加」から作成してください。
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── メインアプリ ── */
+function App() {
+  const [cards, setCards] = useState(loadCards);
+  const [tab, setTab] = useState("home");
+  const [overlay, setOverlay] = useState(null);
+
+  useEffect(()=>{ saveCards(cards); }, [cards]);
+
+  function addCard({front,back,category}){ setCards(p=>[...p,{id:Date.now(),front,back,category,status:"new"}]); setOverlay(null); setTab("list"); }
+  function updateCard({front,back,category}){ setCards(p=>p.map(c=>c.id===overlay.card.id?{...c,front,back,category}:c)); setOverlay(null); }
+  function deleteCard(id){ if(window.confirm("このカードを削除しますか？")) setCards(p=>p.filter(c=>c.id!==id)); }
+  function updateStatus(id,status){ setCards(p=>p.map(c=>c.id===id?{...c,status}:c)); }
+  function resetAll(){ if(window.confirm("全カードの学習状況をリセットしますか？")) setCards(p=>p.map(c=>({...c,status:"new"}))); }
+
+  if(overlay==="study") return <StudyScreen allCards={cards} onUpdateStatus={updateStatus} onExit={()=>setOverlay(null)} />;
+  if(overlay==="add") return <CardForm onSave={addCard} onCancel={()=>setOverlay(null)} />;
+  if(overlay?.type==="edit") return <CardForm initial={overlay.card} onSave={updateCard} onCancel={()=>setOverlay(null)} />;
+
+  const TABS=[
+    {id:"home", icon:"📊", label:"ホーム"},
+    {id:"list", icon:"📋", label:"カード"},
+    {id:"study", icon:"🔥", label:"学習", action:()=>setOverlay("study"), accent:true},
+    {id:"add",  icon:"＋", label:"追加", action:()=>setOverlay("add")},
+  ];
+
+  return (
+    <div style={appStyle}>
+      <div style={{ padding:"16px 20px 12px", borderBottom:"1px solid #1e2d45", flexShrink:0 }}>
+        <h1 style={{ margin:0, fontSize:19, fontWeight:800, color:"#f0f4f8" }}>🔥 消防設備士 乙6</h1>
+        <p style={{ margin:0, fontSize:11, color:"#4a6a8a", marginTop:2 }}>単語帳アプリ</p>
+      </div>
+      <div style={{ flex:1, overflow:"hidden", display:"flex", flexDirection:"column" }}>
+        {tab==="home" && <HomeTab cards={cards} onStartStudy={()=>setOverlay("study")} />}
+        {tab==="list" && <CardListTab cards={cards} onEdit={card=>setOverlay({type:"edit",card})} onDelete={deleteCard} onResetAll={resetAll} />}
+      </div>
+      <div style={{
+        position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:480,
+        background:"rgba(15,23,42,0.97)", backdropFilter:"blur(16px)",
+        borderTop:"1px solid #1e2d45",
+        display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr",
+        paddingBottom:"env(safe-area-inset-bottom)",
+        zIndex:100,
+      }}>
+        {TABS.map(t=>{
+          const active = !t.action && tab===t.id;
+          return (
+            <button key={t.id} onClick={t.action||(()=>setTab(t.id))} style={{
+              background:"none", border:"none", cursor:"pointer", padding:"12px 4px",
+              display:"flex", flexDirection:"column", alignItems:"center", gap:3,
+            }}>
+              {t.accent ? (
+                <span style={{ fontSize:20, background:"#e63946", width:44, height:44, borderRadius:22, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:2 }}>{t.icon}</span>
+              ) : (
+                <span style={{ fontSize:22, color:active?"#e63946":"#4a6a8a", lineHeight:1 }}>{t.icon}</span>
+              )}
+              <span style={{ fontSize:10, color:t.accent?"#e63946":active?"#e63946":"#4a6a8a", fontWeight:active||t.accent?700:400 }}>{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── スタイル ── */
+const appStyle={height:"100dvh",display:"flex",flexDirection:"column",background:"#0f172a",fontFamily:"'Noto Sans JP','Hiragino Sans',sans-serif",color:"#f0f4f8",overflow:"hidden",maxWidth:480,margin:"0 auto"};
+const overlayStyle={position:"fixed",inset:0,background:"#0f172a",zIndex:200,display:"flex",flexDirection:"column",fontFamily:"'Noto Sans JP','Hiragino Sans',sans-serif"};
+const overlayHeader={display:"flex",alignItems:"center",padding:"16px 20px",borderBottom:"1px solid #1e2d45",flexShrink:0};
+const overlayTitle={color:"#f0f4f8",fontWeight:700,fontSize:17,marginLeft:12};
+const backBtn={background:"none",border:"none",color:"#94a3b8",fontSize:26,cursor:"pointer",padding:"4px 8px",lineHeight:1};
+const lbl={display:"block",color:"#94a3b8",fontSize:13,marginBottom:8,fontWeight:500};
+const inp={width:"100%",background:"#1e2d45",border:"1px solid #2d4a6e",borderRadius:10,padding:"14px",color:"#f0f4f8",fontSize:16,boxSizing:"border-box",outline:"none",fontFamily:"inherit"};
+function bigBtn(bg){return{background:bg,color:"#fff",border:"none",borderRadius:14,padding:"17px 24px",fontSize:16,fontWeight:700,cursor:"pointer"};}
+function judgeBtn(color){return{background:`${color}22`,border:`2px solid ${color}`,color,borderRadius:14,padding:"16px 8px",fontSize:24,fontWeight:800,cursor:"pointer",lineHeight:1.3};}
+const iconBtn={background:"none",border:"none",cursor:"pointer",padding:"10px",borderRadius:8,lineHeight:1,fontSize:20};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+
+/* ── Service Worker 登録 ── */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
