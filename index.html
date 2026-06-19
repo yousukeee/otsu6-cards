@@ -1,398 +1,552 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <meta name="theme-color" content="#0f172a"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="乙6単語帳"/>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="apple-touch-icon" href="icon-192.png"/>
-  <title>消防設備士乙6 単語帳</title>
-  <style>
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-    html,body,#root{height:100%;margin:0;padding:0;background:#0f172a;}
-    body{overscroll-behavior:none;}
-    textarea,select,input{font-family:inherit;}
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#0f172a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="乙6単語帳"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<title>消防設備士乙6 単語帳</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
+html,body{height:100%;background:#0f172a;font-family:'Hiragino Sans','Noto Sans JP',sans-serif;color:#f0f4f8;overscroll-behavior:none;}
+#app{height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;overflow:hidden;}
+.header{padding:16px 20px 12px;border-bottom:1px solid #1e2d45;flex-shrink:0;}
+.header h1{font-size:19px;font-weight:800;}
+.header p{font-size:11px;color:#4a6a8a;margin-top:2px;}
+.content{flex:1;overflow-y:auto;padding:20px 16px 100px;}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(15,23,42,0.97);border-top:1px solid #1e2d45;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding-bottom:env(safe-area-inset-bottom);z-index:100;}
+.nav-btn{background:none;border:none;cursor:pointer;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.nav-icon{font-size:22px;color:#4a6a8a;line-height:1;}
+.nav-icon.active{color:#e63946;}
+.nav-icon.accent{font-size:20px;background:#e63946;width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;}
+.nav-label{font-size:10px;color:#4a6a8a;}
+.nav-label.active,.nav-label.accent{color:#e63946;font-weight:700;}
+/* カード */
+.card-item{background:#1e2d45;border-radius:14px;padding:14px 16px;border:1px solid #2d4a6e;margin-bottom:10px;}
+.card-item .tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;}
+.tag-cat{font-size:10px;background:#0f172a;color:#94a3b8;padding:2px 8px;border-radius:10px;}
+.tag-status{font-size:10px;}
+.card-q{color:#f0f4f8;font-size:14px;font-weight:500;line-height:1.5;margin-bottom:4px;}
+.card-a{color:#94a3b8;font-size:13px;line-height:1.4;}
+.card-actions{display:flex;flex-direction:column;gap:4px;margin-left:12px;flex-shrink:0;}
+.icon-btn{background:none;border:none;cursor:pointer;padding:10px;border-radius:8px;font-size:20px;line-height:1;}
+/* 進捗 */
+.progress-box{background:linear-gradient(135deg,#1e2d45,#162035);border-radius:20px;padding:28px 24px;margin-bottom:20px;border:1px solid #2d4a6e;text-align:center;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.stat-card{background:#0f172a;border-radius:10px;padding:10px 14px;text-align:left;}
+.stat-label{font-size:11px;font-weight:600;margin-bottom:4px;}
+.stat-val{font-size:24px;font-weight:800;color:#f0f4f8;}
+.stat-unit{font-size:13px;color:#64748b;font-weight:400;}
+.cat-progress{background:#1e2d45;border-radius:12px;padding:14px 16px;border:1px solid #2d4a6e;margin-bottom:10px;}
+.cat-header{display:flex;justify-content:space-between;margin-bottom:8px;}
+.cat-name{color:#f0f4f8;font-size:14px;}
+.cat-pct{color:#22c55e;font-size:13px;font-weight:700;}
+.progress-bar{background:#0f172a;border-radius:4px;height:6px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,#e63946,#22c55e);transition:width 0.5s;}
+.cat-count{color:#4a6a8a;font-size:11px;margin-top:6px;}
+.section-title{color:#64748b;font-size:12px;font-weight:700;letter-spacing:2px;margin-bottom:12px;}
+/* フィルター */
+.filter-row{overflow-x:auto;padding:10px 16px 0;}
+.filter-inner{display:flex;gap:8px;width:max-content;padding-bottom:10px;}
+.filter-btn{padding:8px 16px;border-radius:20px;border:none;cursor:pointer;font-size:13px;white-space:nowrap;background:#1e2d45;color:#94a3b8;font-weight:400;}
+.filter-btn.active{background:#e63946;color:#fff;font-weight:700;}
+.filter-btn.status-active{background:#2d4a6e;color:#f0f4f8;border:none;}
+.filter-btn.status-inactive{background:transparent;color:#64748b;border:1px solid #2d4a6e;}
+/* オーバーレイ */
+.overlay{position:fixed;inset:0;background:#0f172a;z-index:200;display:flex;flex-direction:column;max-width:480px;left:50%;transform:translateX(-50%);}
+.overlay-header{display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid #1e2d45;flex-shrink:0;}
+.overlay-title{color:#f0f4f8;font-weight:700;font-size:17px;margin-left:12px;}
+.back-btn{background:none;border:none;color:#94a3b8;font-size:26px;cursor:pointer;padding:4px 8px;line-height:1;}
+.overlay-content{flex:1;overflow-y:auto;padding:24px 20px;}
+/* フォーム */
+.form-label{display:block;color:#94a3b8;font-size:13px;margin-bottom:8px;font-weight:500;}
+.form-input{width:100%;background:#1e2d45;border:1px solid #2d4a6e;border-radius:10px;padding:14px;color:#f0f4f8;font-size:16px;outline:none;font-family:inherit;}
+.form-group{margin-bottom:18px;}
+/* ボタン */
+.big-btn{border:none;border-radius:14px;padding:17px 24px;font-size:16px;font-weight:700;cursor:pointer;color:#fff;width:100%;margin-bottom:12px;font-family:inherit;}
+.btn-red{background:#e63946;}
+.btn-blue{background:#1d4ed8;}
+.btn-gray{background:#334155;}
+.btn-dark{background:#1e2d45;border:1px solid #2d4a6e;}
+/* カードめくり */
+.flip-area{flex:1;padding:8px 20px 0;perspective:1400px;}
+.flip-card{width:100%;height:100%;transform-style:preserve-3d;transition:transform 0.45s cubic-bezier(0.4,0,0.2,1);cursor:pointer;position:relative;}
+.flip-card.flipped{transform:rotateY(180deg);}
+.flip-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;box-shadow:0 12px 40px rgba(0,0,0,0.5);}
+.flip-front{background:linear-gradient(150deg,#1e2d45,#162035);border:1.5px solid #2d4a6e;}
+.flip-back{background:linear-gradient(150deg,#1a3a2e,#112a20);border:1.5px solid #2d6a4f;transform:rotateY(180deg);overflow-y:auto;}
+.flip-cat{font-size:11px;letter-spacing:3px;color:#e63946;font-weight:800;margin-bottom:24px;text-transform:uppercase;}
+.flip-q{color:#f0f4f8;font-size:20px;font-weight:600;text-align:center;line-height:1.65;}
+.flip-hint{position:absolute;bottom:20px;color:#3a5a7a;font-size:13px;}
+.flip-ans-label{font-size:11px;letter-spacing:3px;color:#22c55e;font-weight:800;margin-bottom:24px;text-transform:uppercase;}
+.flip-ans{color:#d1fae5;font-size:18px;font-weight:500;text-align:center;line-height:1.75;}
+.judge-area{padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom));flex-shrink:0;}
+.judge-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.judge-btn{border-radius:14px;padding:16px 8px;font-size:24px;font-weight:800;cursor:pointer;line-height:1.3;font-family:inherit;}
+.judge-hint{color:#3a5a7a;font-size:12px;text-align:center;margin-bottom:12px;}
+.quiz-header{padding:14px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.quiz-progress-bar{flex:1;background:#1e2d45;border-radius:4px;height:6px;overflow:hidden;}
+.quiz-progress-fill{height:100%;background:linear-gradient(90deg,#e63946,#f59e0b);transition:width 0.3s;}
+.quiz-count{color:#64748b;font-size:14px;min-width:52px;text-align:right;}
+.done-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;}
+.done-emoji{font-size:72px;margin-bottom:16px;}
+.done-title{color:#22c55e;font-size:26px;margin-bottom:8px;font-weight:700;}
+.done-msg{color:#94a3b8;margin-bottom:40px;font-size:16px;}
+.cat-select-list{display:flex;flex-direction:column;gap:10px;margin-bottom:28px;}
+.cat-select-btn{padding:16px 20px;border-radius:14px;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;font-size:15px;font-family:inherit;}
+.info-row{color:#94a3b8;font-size:14px;margin-bottom:20px;}
+.info-row span{color:#e63946;font-weight:700;}
+.list-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 0 4px;}
+.list-count{color:#64748b;font-size:12px;}
+.reset-btn{background:none;border:1px solid #334155;color:#64748b;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;}
+</style>
 </head>
 <body>
-<div id="root"></div>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script type="text/babel">
-const { useState, useEffect, useRef } = React;
+<div id="app">
+  <div class="header">
+    <h1>🔥 消防設備士 乙6</h1>
+    <p id="subtitle">単語帳</p>
+  </div>
+  <div id="main-content" class="content"></div>
+  <nav class="bottom-nav" id="bottom-nav"></nav>
+</div>
 
+<script>
+// ── データ ──
 const CATEGORIES = ["法令共通","法令類別","機械の基礎知識","構造・機能","消火薬剤・種類","点検・整備"];
-
-const ALL_CARDS = [
-  // 法令共通 20問
-  { id:1, front:"消防法において「防火対象物」とは何か？", back:"山林または舟車、船きょ若しくはふ頭に繋留された船舶、建築物その他の工作物もしくはこれらに属するもの", category:"法令共通" },
-  { id:2, front:"消防設備士の免状の種類を2つ答えよ", back:"甲種消防設備士と乙種消防設備士", category:"法令共通" },
-  { id:3, front:"乙種消防設備士ができる業務は？", back:"消防用設備等の整備・点検（工事はできない）", category:"法令共通" },
-  { id:4, front:"消防設備士免状の書換え申請が必要な場合は？", back:"氏名・本籍地の都道府県が変わったとき", category:"法令共通" },
-  { id:5, front:"消防設備士免状の返納命令を出せるのは誰か？", back:"都道府県知事", category:"法令共通" },
-  { id:6, front:"消防設備士の講習受講義務の頻度は？", back:"免状取得後最初の4月1日から2年以内、その後は5年ごと", category:"法令共通" },
-  { id:7, front:"消防用設備等の点検結果を報告する義務者は？", back:"防火対象物の関係者（所有者・管理者・占有者）", category:"法令共通" },
-  { id:8, front:"特定防火対象物の点検報告の頻度は？", back:"1年に1回", category:"法令共通" },
-  { id:9, front:"非特定防火対象物の点検報告の頻度は？", back:"3年に1回", category:"法令共通" },
-  { id:10, front:"消防用設備等の設置・維持の義務者は？", back:"防火対象物の関係者（所有者・管理者・占有者）", category:"法令共通" },
-  { id:11, front:"防火管理者の選任が必要な特定防火対象物の収容人員は？", back:"30人以上", category:"法令共通" },
-  { id:12, front:"消防法で定める「関係者」とは？", back:"防火対象物の所有者・管理者・占有者", category:"法令共通" },
-  { id:13, front:"消防用設備等の検査を受けなければならない防火対象物は？", back:"延べ面積1,000㎡以上の特定防火対象物など政令で定めるもの", category:"法令共通" },
-  { id:14, front:"消防設備士でなければ行えない消火器の業務は？", back:"整備は乙種6類が必要。ただし消火器の設置（工事）は消防設備士でなくてもできる", category:"法令共通" },
-  { id:15, front:"消防法第17条の3の3に定める点検の種類は？", back:"機器点検（6ヶ月に1回）と総合点検（1年に1回）", category:"法令共通" },
-  { id:16, front:"「特定防火対象物」の例を3つ挙げよ", back:"①劇場・映画館 ②百貨店・マーケット ③病院・診療所 など不特定多数が利用する施設", category:"法令共通" },
-  { id:17, front:"消防用設備等の種類のうち「消火設備」に含まれるものを2つ挙げよ", back:"消火器、屋内消火栓設備、スプリンクラー設備 など", category:"法令共通" },
-  { id:18, front:"消防設備士免状の交付を行うのは誰か？", back:"都道府県知事", category:"法令共通" },
-  { id:19, front:"消防用設備等の工事完了後に届け出る先は？", back:"消防長または消防署長", category:"法令共通" },
-  { id:20, front:"防火対象物の用途変更で消防用設備等の基準が変わる場合、遡及適用されるか？", back:"原則遡及適用される（既存不適格の特例あり）", category:"法令共通" },
-  // 法令類別 15問
-  { id:21, front:"消火器の設置が必要な防火対象物の延べ面積基準は？（一般の場合）", back:"延べ面積150㎡以上", category:"法令類別" },
-  { id:22, front:"消火器の歩行距離による設置基準は？", back:"各階ごとに、歩行距離20m以下ごとに1本", category:"法令類別" },
-  { id:23, front:"能力単位とは何か？", back:"消火器の消火能力を示す数値。A火災・B火災それぞれに設定される", category:"法令類別" },
-  { id:24, front:"消火器の設置高さ基準は？", back:"床面からの高さ1.5m以下の場所に設置", category:"法令類別" },
-  { id:25, front:"消火器を設置しなくてよい免除の例を1つ挙げよ", back:"スプリンクラー設備が有効に設置されている部分（延べ面積の1/3相当免除）", category:"法令類別" },
-  { id:26, front:"地下街における消火器の歩行距離基準は？", back:"歩行距離20m以下（一般と同じ）", category:"法令類別" },
-  { id:27, front:"多量の火気使用場所での消火器の追加設置基準は？", back:"床面積25㎡以下ごとに能力単位1以上", category:"法令類別" },
-  { id:28, front:"消火器の設置が義務付けられる指定可燃物の数量は？", back:"指定可燃物の500倍以上を貯蔵・取扱う場所", category:"法令類別" },
-  { id:29, front:"A火災用消火器の能力単位算定の基準面積は？（耐火構造以外）", back:"50㎡（耐火構造は100㎡）", category:"法令類別" },
-  { id:30, front:"飲食店で火を使用する設備がある場合、消火器設置の面積要件は？", back:"面積に関係なく設置が必要", category:"法令類別" },
-  { id:31, front:"消火器は屋外に設置できるか？", back:"できる。ただし雨水等による影響を受けない措置が必要", category:"法令類別" },
-  { id:32, front:"消火器の設置場所に表示は必要か？", back:"必要。「消火器」と表示した標識を見やすい位置に設ける", category:"法令類別" },
-  { id:33, front:"大型消火器の設置基準（歩行距離）は？", back:"歩行距離30m以下ごとに1本", category:"法令類別" },
-  { id:34, front:"消火器の設置が必要な地階・無窓階の基準は？", back:"床面積50㎡以上の地階・無窓階", category:"法令類別" },
-  { id:35, front:"能力単位の算定で「耐火構造」の場合に基準面積が2倍になる理由は？", back:"耐火構造は延焼リスクが低いため、必要な消火能力を緩和できるため", category:"法令類別" },
-  // 機械の基礎知識 15問
-  { id:36, front:"圧力の単位を2つ挙げよ", back:"Pa（パスカル）、MPa（メガパスカル）。1MPa＝1,000,000Pa", category:"機械の基礎知識" },
-  { id:37, front:"ゲージ圧力と絶対圧力の関係は？", back:"絶対圧力＝ゲージ圧力＋大気圧（約0.1MPa）", category:"機械の基礎知識" },
-  { id:38, front:"金属の「引張強さ」とは何か？", back:"材料が引っ張り力に耐えられる最大応力", category:"機械の基礎知識" },
-  { id:39, front:"ステンレス鋼の主な合金成分は？", back:"クロム（Cr）とニッケル（Ni）を含む鋼", category:"機械の基礎知識" },
-  { id:40, front:"炭酸ガス（CO₂）の性質を3つ挙げよ", back:"①不燃性 ②空気より重い（比重約1.5）③窒息効果がある", category:"機械の基礎知識" },
-  { id:41, front:"窒素ガス（N₂）が蓄圧式消火器に使われる理由は？", back:"不活性・不燃性で薬剤と反応せず、安定した加圧ができるため", category:"機械の基礎知識" },
-  { id:42, front:"ボイル・シャルルの法則とは？", back:"気体の圧力×体積÷絶対温度＝一定（PV/T＝一定）", category:"機械の基礎知識" },
-  { id:43, front:"「腐食」とはどのような現象か？", back:"金属が化学反応（酸化など）により劣化・侵食される現象", category:"機械の基礎知識" },
-  { id:44, front:"アルミニウムの特徴を2つ挙げよ", back:"①軽量（比重2.7）②耐食性が高い（酸化皮膜を形成）", category:"機械の基礎知識" },
-  { id:45, front:"「応力」とは何か？", back:"外力によって材料内部に生じる単位面積あたりの力", category:"機械の基礎知識" },
-  { id:46, front:"安全弁の役割は？", back:"容器内の圧力が異常上昇した際に自動的に圧力を逃がす装置", category:"機械の基礎知識" },
-  { id:47, front:"高圧ガス保安法における高圧ガスの定義（圧力）は？", back:"常用の温度で1MPa（ゲージ圧）以上の圧縮ガスなど", category:"機械の基礎知識" },
-  { id:48, front:"「充填比」とは何か？", back:"容器の内容積に対する充填ガス質量の比率。安全確保のための基準値がある", category:"機械の基礎知識" },
-  { id:49, front:"金属の疲労破壊とはどのような現象か？", back:"繰り返し応力により、静的強度以下の力で破壊が起こる現象", category:"機械の基礎知識" },
-  { id:50, front:"「安全率」とは何か？", back:"破壊強度÷許容応力。設計上の安全余裕を示す指数", category:"機械の基礎知識" },
-  // 構造・機能 20問
-  { id:51, front:"蓄圧式消火器の特徴は？", back:"常時消火薬剤と加圧ガス（窒素等）が同一容器に充填。指示圧力計が付いている", category:"構造・機能" },
-  { id:52, front:"加圧式消火器の特徴は？", back:"使用時に加圧用ガス容器（内筒）が破封されて薬剤を放出する。指示圧力計はない", category:"構造・機能" },
-  { id:53, front:"指示圧力計の正常範囲（緑色範囲）は？", back:"0.7〜0.98MPa（製品により異なるが概ねこの範囲）", category:"構造・機能" },
-  { id:54, front:"消火器の「安全栓」の役割は？", back:"誤操作によるレバー加圧を防止する安全装置", category:"構造・機能" },
-  { id:55, front:"消火器の「ノズル」の役割は？", back:"消火薬剤を目的の形状（棒状・噴霧状）で放射する部品", category:"構造・機能" },
-  { id:56, front:"化学泡消火器の消火薬剤は何と何が反応するか？", back:"A剤（炭酸水素ナトリウム水溶液）とB剤（硫酸アルミニウム水溶液）が反応してCO₂泡を発生", category:"構造・機能" },
-  { id:57, front:"機械泡消火器と化学泡消火器の違いは？", back:"機械泡：空気を混入させて泡を作る。化学泡：薬剤の化学反応で泡を作る", category:"構造・機能" },
-  { id:58, front:"二酸化炭素消火器の容器の色は？", back:"緑色", category:"構造・機能" },
-  { id:59, front:"消火器の「使用温度範囲」の一般的な基準は？", back:"通常は-20℃〜40℃（強化液は-20℃〜40℃、機種によって異なる）", category:"構造・機能" },
-  { id:60, front:"大型消火器の定義は？", back:"能力単位がA火災10以上またはB火災20以上の消火器", category:"構造・機能" },
-  { id:61, front:"強化液消火器の消火効果は？", back:"冷却効果と抑制効果（再燃防止）。A火災に特に有効", category:"構造・機能" },
-  { id:62, front:"消火器の「ホース」が不要な場合は？", back:"消火薬剤の質量が4kg未満の粉末消火器など小型のもの", category:"構造・機能" },
-  { id:63, front:"粉末消火器の窒素ガス封入の目的は？", back:"粉末薬剤の湿気による固化防止と放射のための加圧", category:"構造・機能" },
-  { id:64, front:"二酸化炭素消火器にホーン（ラッパ型ノズル）が使われる理由は？", back:"液化CO₂の急激な気化膨張による静電気・凍傷を防ぎ、効率よく放射するため", category:"構造・機能" },
-  { id:65, front:"消火器の老朽化廃棄の目安となる年数は？", back:"製造年から概ね10年（腐食・変形・損傷があればそれ以前でも廃棄）", category:"構造・機能" },
-  { id:66, front:"ハロゲン化物消火器が製造禁止になった理由は？", back:"オゾン層を破壊するため（モントリオール議定書による規制）", category:"構造・機能" },
-  { id:67, front:"粉末消火器の放射時間・放射距離の目安は？", back:"放射時間：約8〜15秒、放射距離：約3〜6m（機種により異なる）", category:"構造・機能" },
-  { id:68, front:"消火器の「キャップ」と「バルブ」の役割の違いは？", back:"キャップ：容器の密閉。バルブ：放射量を制御する開閉弁", category:"構造・機能" },
-  { id:69, front:"蓄圧式が加圧式より優れている点は？", back:"常時圧力を指示圧力計で確認できるため、整備・管理がしやすい", category:"構造・機能" },
-  { id:70, front:"消火器の「サイホン管」の役割は？", back:"容器底部の薬剤をノズルまで導くための管", category:"構造・機能" },
-  // 消火薬剤・種類 20問
-  { id:71, front:"A火災（普通火災）とはどのような火災か？", back:"木材・紙・繊維などの一般可燃物の火災", category:"消火薬剤・種類" },
-  { id:72, front:"B火災（油火災）とはどのような火災か？", back:"石油・油脂などの可燃性液体・固体の火災", category:"消火薬剤・種類" },
-  { id:73, front:"C火災（電気火災）とはどのような火災か？", back:"電気設備・電気機器が関係する火災", category:"消火薬剤・種類" },
-  { id:74, front:"粉末（ABC）消火器が適応する火災は？", back:"A火災・B火災・C火災すべてに適応", category:"消火薬剤・種類" },
-  { id:75, front:"粉末（BC）消火器が適応する火災は？", back:"B火災・C火災（A火災には不適応）", category:"消火薬剤・種類" },
-  { id:76, front:"強化液消火器が適応する火災は？", back:"主にA火災（霧状放射ならB・C火災にも適応）", category:"消火薬剤・種類" },
-  { id:77, front:"二酸化炭素消火器が適応する火災は？", back:"B火災・C火災（A火災には不適応）", category:"消火薬剤・種類" },
-  { id:78, front:"泡消火器が適応する火災は？", back:"A火災・B火災（C火災には不適応）", category:"消火薬剤・種類" },
-  { id:79, front:"水消火器が適応する火災は？", back:"A火災のみ（B・C火災には不適応）", category:"消火薬剤・種類" },
-  { id:80, front:"ABC粉末消火薬剤の主成分は？", back:"リン酸アンモニウム（第一リン酸アンモニウム）", category:"消火薬剤・種類" },
-  { id:81, front:"BC粉末消火薬剤の主成分は？", back:"炭酸水素ナトリウム（重曹）または炭酸水素カリウム", category:"消火薬剤・種類" },
-  { id:82, front:"強化液消火器の主成分は？", back:"炭酸カリウム水溶液（アルカリ性）", category:"消火薬剤・種類" },
-  { id:83, front:"粉末消火薬剤の主な消火効果は？", back:"抑制効果（負触媒効果）が主。窒息・冷却効果もある", category:"消火薬剤・種類" },
-  { id:84, front:"泡消火薬剤の主な消火効果は？", back:"窒息効果（泡で覆う）と冷却効果", category:"消火薬剤・種類" },
-  { id:85, front:"二酸化炭素の主な消火効果は？", back:"窒息効果が主。冷却効果もある", category:"消火薬剤・種類" },
-  { id:86, front:"強化液消火器を電気火災（棒状放射）に使えない理由は？", back:"薬剤（水溶液）が電気を通し感電の危険があるため（霧状放射は使用可）", category:"消火薬剤・種類" },
-  { id:87, front:"泡消火器を電気火災に使えない理由は？", back:"泡（水系）が電気を通し感電の危険があるため", category:"消火薬剤・種類" },
-  { id:88, front:"粉末消火薬剤に防湿加工を施す理由は？", back:"吸湿による固化を防いで流動性を維持するため", category:"消火薬剤・種類" },
-  { id:89, front:"消火器の適応火災の絵表示の色（A・B・C）は？", back:"A火災：白地に赤文字 ／ B火災：黄地に黒文字 ／ C火災：青地に白文字", category:"消火薬剤・種類" },
-  { id:90, front:"化学泡消火器の使用方法が他の消火器と異なる点は？", back:"転倒させて使用する（逆さにしてA剤とB剤を混合させる）", category:"消火薬剤・種類" },
-  // 点検・整備 20問
-  { id:91, front:"消火器の機器点検の頻度は？", back:"6ヶ月に1回", category:"点検・整備" },
-  { id:92, front:"消火器の総合点検の頻度は？", back:"1年に1回", category:"点検・整備" },
-  { id:93, front:"消火器の外観点検で確認する項目を3つ挙げよ", back:"①変形・損傷・腐食の有無 ②安全栓・封印の状態 ③圧力計の指針位置", category:"点検・整備" },
-  { id:94, front:"蓄圧式粉末消火器の機能点検の時期は？", back:"製造年から5年を超えたもの（以降3年ごと）", category:"点検・整備" },
-  { id:95, front:"加圧式粉末消火器の機能点検の時期は？", back:"製造年から3年を超えたもの（以降3年ごと）", category:"点検・整備" },
-  { id:96, front:"消火器の耐圧性能試験（水圧試験）が必要な場合は？", back:"製造年から10年を超えた消火器（以降5年ごと）", category:"点検・整備" },
-  { id:97, front:"消火器の廃棄が必要な場合を2つ挙げよ", back:"①耐圧試験で不合格 ②本体容器に腐食・変形・損傷があり整備不能な場合", category:"点検・整備" },
-  { id:98, front:"粉末消火薬剤の固化確認方法は？", back:"消火器を逆さにして振り、塊がなく流動することを確認", category:"点検・整備" },
-  { id:99, front:"消火器の点検票の保存期間は？", back:"3年間", category:"点検・整備" },
-  { id:100, front:"消火器の充填後に行う気密試験とは？", back:"充填した消火器からガスや薬剤が漏れないか確認する試験", category:"点検・整備" },
-  { id:101, front:"消火器の安全栓の点検項目は？", back:"引き抜きに支障がないか、変形・腐食がないか確認", category:"点検・整備" },
-  { id:102, front:"指示圧力計の点検項目は？", back:"指針が緑色範囲内にあるか、ガラス面の損傷・変形がないか", category:"点検・整備" },
-  { id:103, front:"消火器のホースの点検項目を2つ挙げよ", back:"①ひび割れ・老化・詰まりの有無 ②ノズルの変形・損傷の有無", category:"点検・整備" },
-  { id:104, front:"化学泡消火器の薬剤交換時期の目安は？", back:"製造年から5年（A剤・B剤ともに定期交換が必要）", category:"点検・整備" },
-  { id:105, front:"消火器本体に腐食が発見された場合の措置は？", back:"腐食が著しい場合は廃棄処分。軽微なものは整備後再使用可", category:"点検・整備" },
-  { id:106, front:"消火器の放射試験後に必要な措置は？", back:"薬剤の再充填または廃棄処分を行う", category:"点検・整備" },
-  { id:107, front:"消火器の設置状況の点検項目を2つ挙げよ", back:"①歩行距離・設置高さ・標識の確認 ②通行・使用の障害がない位置かどうか", category:"点検・整備" },
-  { id:108, front:"消火器の加圧用ガス容器（内筒）の点検項目は？", back:"質量の確認（規定値以上か）、腐食・変形の有無", category:"点検・整備" },
-  { id:109, front:"消火器の点検・整備ができる資格者は？", back:"乙種第6類消防設備士または消防設備点検資格者", category:"点検・整備" },
-  { id:110, front:"消火器の「封印」が破れている場合はどう対処するか？", back:"使用または整備された可能性があるため、内部点検・薬剤確認を行う", category:"点検・整備" },
-];
-
 const STATUS = {
   new:{label:"未学習",color:"#64748b"},
   correct:{label:"正解 ◎",color:"#22c55e"},
   unsure:{label:"あいまい △",color:"#f59e0b"},
-  wrong:{label:"不正解 ✗",color:"#ef4444"},
+  wrong:{label:"不正解 ✗",color:"#ef4444"}
 };
+const ALL_CARDS = [
+  {id:1,front:"消防法において「防火対象物」とは何か？",back:"山林または舟車、船きょ若しくはふ頭に繋留された船舶、建築物その他の工作物もしくはこれらに属するもの",category:"法令共通"},
+  {id:2,front:"消防設備士の免状の種類を2つ答えよ",back:"甲種消防設備士と乙種消防設備士",category:"法令共通"},
+  {id:3,front:"乙種消防設備士ができる業務は？",back:"消防用設備等の整備・点検（工事はできない）",category:"法令共通"},
+  {id:4,front:"消防設備士免状の書換え申請が必要な場合は？",back:"氏名・本籍地の都道府県が変わったとき",category:"法令共通"},
+  {id:5,front:"消防設備士免状の返納命令を出せるのは誰か？",back:"都道府県知事",category:"法令共通"},
+  {id:6,front:"消防設備士の講習受講義務の頻度は？",back:"免状取得後最初の4月1日から2年以内、その後は5年ごと",category:"法令共通"},
+  {id:7,front:"消防用設備等の点検結果を報告する義務者は？",back:"防火対象物の関係者（所有者・管理者・占有者）",category:"法令共通"},
+  {id:8,front:"特定防火対象物の点検報告の頻度は？",back:"1年に1回",category:"法令共通"},
+  {id:9,front:"非特定防火対象物の点検報告の頻度は？",back:"3年に1回",category:"法令共通"},
+  {id:10,front:"消防用設備等の設置・維持の義務者は？",back:"防火対象物の関係者（所有者・管理者・占有者）",category:"法令共通"},
+  {id:11,front:"防火管理者の選任が必要な特定防火対象物の収容人員は？",back:"30人以上",category:"法令共通"},
+  {id:12,front:"消防法で定める「関係者」とは？",back:"防火対象物の所有者・管理者・占有者",category:"法令共通"},
+  {id:13,front:"消防用設備等の検査を受けなければならない防火対象物は？",back:"延べ面積1,000㎡以上の特定防火対象物など政令で定めるもの",category:"法令共通"},
+  {id:14,front:"消防設備士でなければ行えない消火器の業務は？",back:"整備は乙種6類が必要。ただし消火器の設置（工事）は消防設備士でなくてもできる",category:"法令共通"},
+  {id:15,front:"消防法第17条の3の3に定める点検の種類は？",back:"機器点検（6ヶ月に1回）と総合点検（1年に1回）",category:"法令共通"},
+  {id:16,front:"「特定防火対象物」の例を3つ挙げよ",back:"①劇場・映画館 ②百貨店・マーケット ③病院・診療所",category:"法令共通"},
+  {id:17,front:"消防用設備等の「消火設備」に含まれるものを2つ挙げよ",back:"消火器、屋内消火栓設備、スプリンクラー設備 など",category:"法令共通"},
+  {id:18,front:"消防設備士免状の交付を行うのは誰か？",back:"都道府県知事",category:"法令共通"},
+  {id:19,front:"消防用設備等の工事完了後に届け出る先は？",back:"消防長または消防署長",category:"法令共通"},
+  {id:20,front:"防火対象物の用途変更で基準が変わる場合、遡及適用されるか？",back:"原則遡及適用される（既存不適格の特例あり）",category:"法令共通"},
+  {id:21,front:"消火器の設置が必要な防火対象物の延べ面積基準は？（一般）",back:"延べ面積150㎡以上",category:"法令類別"},
+  {id:22,front:"消火器の歩行距離による設置基準は？",back:"各階ごとに、歩行距離20m以下ごとに1本",category:"法令類別"},
+  {id:23,front:"能力単位とは何か？",back:"消火器の消火能力を示す数値。A火災・B火災それぞれに設定される",category:"法令類別"},
+  {id:24,front:"消火器の設置高さ基準は？",back:"床面からの高さ1.5m以下の場所に設置",category:"法令類別"},
+  {id:25,front:"消火器を設置しなくてよい免除の例を1つ挙げよ",back:"スプリンクラー設備が有効に設置されている部分（延べ面積の1/3相当免除）",category:"法令類別"},
+  {id:26,front:"地下街における消火器の歩行距離基準は？",back:"歩行距離20m以下（一般と同じ）",category:"法令類別"},
+  {id:27,front:"多量の火気使用場所での消火器の追加設置基準は？",back:"床面積25㎡以下ごとに能力単位1以上",category:"法令類別"},
+  {id:28,front:"消火器の設置が義務付けられる指定可燃物の数量は？",back:"指定可燃物の500倍以上を貯蔵・取扱う場所",category:"法令類別"},
+  {id:29,front:"A火災用消火器の能力単位算定の基準面積は？（耐火構造以外）",back:"50㎡（耐火構造は100㎡）",category:"法令類別"},
+  {id:30,front:"飲食店で火を使用する設備がある場合、消火器設置の面積要件は？",back:"面積に関係なく設置が必要",category:"法令類別"},
+  {id:31,front:"消火器は屋外に設置できるか？",back:"できる。ただし雨水等による影響を受けない措置が必要",category:"法令類別"},
+  {id:32,front:"消火器の設置場所に表示は必要か？",back:"必要。「消火器」と表示した標識を見やすい位置に設ける",category:"法令類別"},
+  {id:33,front:"大型消火器の設置基準（歩行距離）は？",back:"歩行距離30m以下ごとに1本",category:"法令類別"},
+  {id:34,front:"消火器の設置が必要な地階・無窓階の基準は？",back:"床面積50㎡以上の地階・無窓階",category:"法令類別"},
+  {id:35,front:"耐火構造の場合に能力単位算定の基準面積が2倍になる理由は？",back:"耐火構造は延焼リスクが低いため、必要な消火能力を緩和できるため",category:"法令類別"},
+  {id:36,front:"圧力の単位を2つ挙げよ",back:"Pa（パスカル）、MPa（メガパスカル）。1MPa＝1,000,000Pa",category:"機械の基礎知識"},
+  {id:37,front:"ゲージ圧力と絶対圧力の関係は？",back:"絶対圧力＝ゲージ圧力＋大気圧（約0.1MPa）",category:"機械の基礎知識"},
+  {id:38,front:"金属の「引張強さ」とは何か？",back:"材料が引っ張り力に耐えられる最大応力",category:"機械の基礎知識"},
+  {id:39,front:"ステンレス鋼の主な合金成分は？",back:"クロム（Cr）とニッケル（Ni）を含む鋼",category:"機械の基礎知識"},
+  {id:40,front:"炭酸ガス（CO₂）の性質を3つ挙げよ",back:"①不燃性 ②空気より重い（比重約1.5）③窒息効果がある",category:"機械の基礎知識"},
+  {id:41,front:"窒素ガス（N₂）が蓄圧式消火器に使われる理由は？",back:"不活性・不燃性で薬剤と反応せず、安定した加圧ができるため",category:"機械の基礎知識"},
+  {id:42,front:"ボイル・シャルルの法則とは？",back:"気体の圧力×体積÷絶対温度＝一定（PV/T＝一定）",category:"機械の基礎知識"},
+  {id:43,front:"「腐食」とはどのような現象か？",back:"金属が化学反応（酸化など）により劣化・侵食される現象",category:"機械の基礎知識"},
+  {id:44,front:"アルミニウムの特徴を2つ挙げよ",back:"①軽量（比重2.7）②耐食性が高い（酸化皮膜を形成）",category:"機械の基礎知識"},
+  {id:45,front:"「応力」とは何か？",back:"外力によって材料内部に生じる単位面積あたりの力",category:"機械の基礎知識"},
+  {id:46,front:"安全弁の役割は？",back:"容器内の圧力が異常上昇した際に自動的に圧力を逃がす装置",category:"機械の基礎知識"},
+  {id:47,front:"高圧ガス保安法における高圧ガスの定義（圧力）は？",back:"常用の温度で1MPa（ゲージ圧）以上の圧縮ガスなど",category:"機械の基礎知識"},
+  {id:48,front:"「充填比」とは何か？",back:"容器の内容積に対する充填ガス質量の比率。安全確保のための基準値がある",category:"機械の基礎知識"},
+  {id:49,front:"金属の疲労破壊とはどのような現象か？",back:"繰り返し応力により、静的強度以下の力で破壊が起こる現象",category:"機械の基礎知識"},
+  {id:50,front:"「安全率」とは何か？",back:"破壊強度÷許容応力。設計上の安全余裕を示す指数",category:"機械の基礎知識"},
+  {id:51,front:"蓄圧式消火器の特徴は？",back:"常時消火薬剤と加圧ガス（窒素等）が同一容器に充填。指示圧力計が付いている",category:"構造・機能"},
+  {id:52,front:"加圧式消火器の特徴は？",back:"使用時に加圧用ガス容器（内筒）が破封されて薬剤を放出する。指示圧力計はない",category:"構造・機能"},
+  {id:53,front:"指示圧力計の正常範囲（緑色範囲）は？",back:"0.7〜0.98MPa（製品により異なるが概ねこの範囲）",category:"構造・機能"},
+  {id:54,front:"消火器の「安全栓」の役割は？",back:"誤操作によるレバー加圧を防止する安全装置",category:"構造・機能"},
+  {id:55,front:"消火器の「ノズル」の役割は？",back:"消火薬剤を目的の形状（棒状・噴霧状）で放射する部品",category:"構造・機能"},
+  {id:56,front:"化学泡消火器の消火薬剤は何と何が反応するか？",back:"A剤（炭酸水素ナトリウム水溶液）とB剤（硫酸アルミニウム水溶液）が反応してCO₂泡を発生",category:"構造・機能"},
+  {id:57,front:"機械泡消火器と化学泡消火器の違いは？",back:"機械泡：空気を混入させて泡を作る。化学泡：薬剤の化学反応で泡を作る",category:"構造・機能"},
+  {id:58,front:"二酸化炭素消火器の容器の色は？",back:"緑色",category:"構造・機能"},
+  {id:59,front:"消火器の「使用温度範囲」の一般的な基準は？",back:"通常は-20℃〜40℃（機種によって異なる）",category:"構造・機能"},
+  {id:60,front:"大型消火器の定義は？",back:"能力単位がA火災10以上またはB火災20以上の消火器",category:"構造・機能"},
+  {id:61,front:"強化液消火器の消火効果は？",back:"冷却効果と抑制効果（再燃防止）。A火災に特に有効",category:"構造・機能"},
+  {id:62,front:"消火器の「ホース」が不要な場合は？",back:"消火薬剤の質量が4kg未満の粉末消火器など小型のもの",category:"構造・機能"},
+  {id:63,front:"粉末消火器の窒素ガス封入の目的は？",back:"粉末薬剤の湿気による固化防止と放射のための加圧",category:"構造・機能"},
+  {id:64,front:"二酸化炭素消火器にホーン（ラッパ型ノズル）が使われる理由は？",back:"液化CO₂の急激な気化膨張による静電気・凍傷を防ぎ、効率よく放射するため",category:"構造・機能"},
+  {id:65,front:"消火器の老朽化廃棄の目安となる年数は？",back:"製造年から概ね10年（腐食・変形・損傷があればそれ以前でも廃棄）",category:"構造・機能"},
+  {id:66,front:"ハロゲン化物消火器が製造禁止になった理由は？",back:"オゾン層を破壊するため（モントリオール議定書による規制）",category:"構造・機能"},
+  {id:67,front:"粉末消火器の放射時間・放射距離の目安は？",back:"放射時間：約8〜15秒、放射距離：約3〜6m（機種により異なる）",category:"構造・機能"},
+  {id:68,front:"消火器の「キャップ」と「バルブ」の役割の違いは？",back:"キャップ：容器の密閉。バルブ：放射量を制御する開閉弁",category:"構造・機能"},
+  {id:69,front:"蓄圧式が加圧式より優れている点は？",back:"常時圧力を指示圧力計で確認できるため、整備・管理がしやすい",category:"構造・機能"},
+  {id:70,front:"消火器の「サイホン管」の役割は？",back:"容器底部の薬剤をノズルまで導くための管",category:"構造・機能"},
+  {id:71,front:"A火災（普通火災）とはどのような火災か？",back:"木材・紙・繊維などの一般可燃物の火災",category:"消火薬剤・種類"},
+  {id:72,front:"B火災（油火災）とはどのような火災か？",back:"石油・油脂などの可燃性液体・固体の火災",category:"消火薬剤・種類"},
+  {id:73,front:"C火災（電気火災）とはどのような火災か？",back:"電気設備・電気機器が関係する火災",category:"消火薬剤・種類"},
+  {id:74,front:"粉末（ABC）消火器が適応する火災は？",back:"A火災・B火災・C火災すべてに適応",category:"消火薬剤・種類"},
+  {id:75,front:"粉末（BC）消火器が適応する火災は？",back:"B火災・C火災（A火災には不適応）",category:"消火薬剤・種類"},
+  {id:76,front:"強化液消火器が適応する火災は？",back:"主にA火災（霧状放射ならB・C火災にも適応）",category:"消火薬剤・種類"},
+  {id:77,front:"二酸化炭素消火器が適応する火災は？",back:"B火災・C火災（A火災には不適応）",category:"消火薬剤・種類"},
+  {id:78,front:"泡消火器が適応する火災は？",back:"A火災・B火災（C火災には不適応）",category:"消火薬剤・種類"},
+  {id:79,front:"水消火器が適応する火災は？",back:"A火災のみ（B・C火災には不適応）",category:"消火薬剤・種類"},
+  {id:80,front:"ABC粉末消火薬剤の主成分は？",back:"リン酸アンモニウム（第一リン酸アンモニウム）",category:"消火薬剤・種類"},
+  {id:81,front:"BC粉末消火薬剤の主成分は？",back:"炭酸水素ナトリウム（重曹）または炭酸水素カリウム",category:"消火薬剤・種類"},
+  {id:82,front:"強化液消火器の主成分は？",back:"炭酸カリウム水溶液（アルカリ性）",category:"消火薬剤・種類"},
+  {id:83,front:"粉末消火薬剤の主な消火効果は？",back:"抑制効果（負触媒効果）が主。窒息・冷却効果もある",category:"消火薬剤・種類"},
+  {id:84,front:"泡消火薬剤の主な消火効果は？",back:"窒息効果（泡で覆う）と冷却効果",category:"消火薬剤・種類"},
+  {id:85,front:"二酸化炭素の主な消火効果は？",back:"窒息効果が主。冷却効果もある",category:"消火薬剤・種類"},
+  {id:86,front:"強化液消火器を電気火災（棒状放射）に使えない理由は？",back:"薬剤（水溶液）が電気を通し感電の危険があるため（霧状放射は使用可）",category:"消火薬剤・種類"},
+  {id:87,front:"泡消火器を電気火災に使えない理由は？",back:"泡（水系）が電気を通し感電の危険があるため",category:"消火薬剤・種類"},
+  {id:88,front:"粉末消火薬剤に防湿加工を施す理由は？",back:"吸湿による固化を防いで流動性を維持するため",category:"消火薬剤・種類"},
+  {id:89,front:"消火器の適応火災の絵表示の色（A・B・C）は？",back:"A火災：白地に赤文字 ／ B火災：黄地に黒文字 ／ C火災：青地に白文字",category:"消火薬剤・種類"},
+  {id:90,front:"化学泡消火器の使用方法が他の消火器と異なる点は？",back:"転倒させて使用する（逆さにしてA剤とB剤を混合させる）",category:"消火薬剤・種類"},
+  {id:91,front:"消火器の機器点検の頻度は？",back:"6ヶ月に1回",category:"点検・整備"},
+  {id:92,front:"消火器の総合点検の頻度は？",back:"1年に1回",category:"点検・整備"},
+  {id:93,front:"消火器の外観点検で確認する項目を3つ挙げよ",back:"①変形・損傷・腐食の有無 ②安全栓・封印の状態 ③圧力計の指針位置",category:"点検・整備"},
+  {id:94,front:"蓄圧式粉末消火器の機能点検の時期は？",back:"製造年から5年を超えたもの（以降3年ごと）",category:"点検・整備"},
+  {id:95,front:"加圧式粉末消火器の機能点検の時期は？",back:"製造年から3年を超えたもの（以降3年ごと）",category:"点検・整備"},
+  {id:96,front:"消火器の耐圧性能試験（水圧試験）が必要な場合は？",back:"製造年から10年を超えた消火器（以降5年ごと）",category:"点検・整備"},
+  {id:97,front:"消火器の廃棄が必要な場合を2つ挙げよ",back:"①耐圧試験で不合格 ②本体容器に腐食・変形・損傷があり整備不能な場合",category:"点検・整備"},
+  {id:98,front:"粉末消火薬剤の固化確認方法は？",back:"消火器を逆さにして振り、塊がなく流動することを確認",category:"点検・整備"},
+  {id:99,front:"消火器の点検票の保存期間は？",back:"3年間",category:"点検・整備"},
+  {id:100,front:"消火器の充填後に行う気密試験とは？",back:"充填した消火器からガスや薬剤が漏れないか確認する試験",category:"点検・整備"},
+  {id:101,front:"消火器の安全栓の点検項目は？",back:"引き抜きに支障がないか、変形・腐食がないか確認",category:"点検・整備"},
+  {id:102,front:"指示圧力計の点検項目は？",back:"指針が緑色範囲内にあるか、ガラス面の損傷・変形がないか",category:"点検・整備"},
+  {id:103,front:"消火器のホースの点検項目を2つ挙げよ",back:"①ひび割れ・老化・詰まりの有無 ②ノズルの変形・損傷の有無",category:"点検・整備"},
+  {id:104,front:"化学泡消火器の薬剤交換時期の目安は？",back:"製造年から5年（A剤・B剤ともに定期交換が必要）",category:"点検・整備"},
+  {id:105,front:"消火器本体に腐食が発見された場合の措置は？",back:"腐食が著しい場合は廃棄処分。軽微なものは整備後再使用可",category:"点検・整備"},
+  {id:106,front:"消火器の放射試験後に必要な措置は？",back:"薬剤の再充填または廃棄処分を行う",category:"点検・整備"},
+  {id:107,front:"消火器の設置状況の点検項目を2つ挙げよ",back:"①歩行距離・設置高さ・標識の確認 ②通行・使用の障害がない位置かどうか",category:"点検・整備"},
+  {id:108,front:"消火器の加圧用ガス容器（内筒）の点検項目は？",back:"質量の確認（規定値以上か）、腐食・変形の有無",category:"点検・整備"},
+  {id:109,front:"消火器の点検・整備ができる資格者は？",back:"乙種第6類消防設備士または消防設備点検資格者",category:"点検・整備"},
+  {id:110,front:"消火器の「封印」が破れている場合はどう対処するか？",back:"使用または整備された可能性があるため、内部点検・薬剤確認を行う",category:"点検・整備"},
+];
 
-const STORE_KEY = "otsu6_v3";
-function loadCards() {
-  try {
-    const d = localStorage.getItem(STORE_KEY);
-    if (d) {
-      const saved = JSON.parse(d);
-      const savedMap = Object.fromEntries(saved.map(c=>[c.id,c]));
-      return ALL_CARDS.map(c => savedMap[c.id] ? {...c, status: savedMap[c.id].status} : {...c, status:"new"});
-    }
-  } catch {}
+// ── State ──
+const STORE = "otsu6_v4";
+function loadCards(){
+  try{
+    const d=localStorage.getItem(STORE);
+    if(d){const s=JSON.parse(d);const m={};s.forEach(c=>m[c.id]=c.status);return ALL_CARDS.map(c=>({...c,status:m[c.id]||"new"}));}
+  }catch{}
   return ALL_CARDS.map(c=>({...c,status:"new"}));
 }
-function saveCards(cards) {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(cards)); } catch {}
+function saveCards(){try{localStorage.setItem(STORE,JSON.stringify(cards));}catch{}}
+
+let cards=loadCards();
+let currentTab="home";
+let overlay=null; // null | "study-select" | "study-quiz" | "study-done" | "add" | {type:"edit",card}
+let studyQueue=[], studyIdx=0, studyFlipped=false, studyCat="すべて";
+let listFilterCat="すべて", listFilterStatus="すべて";
+let touchStartX=null;
+
+// ── Render ──
+function render(){
+  document.getElementById("subtitle").textContent="単語帳 — 全"+cards.length+"問";
+  renderNav();
+  if(overlay) renderOverlay();
+  else renderMain();
 }
 
-function FlipCard({card,flipped,onFlip}) {
-  return (
-    <div onClick={onFlip} style={{perspective:"1400px",width:"100%",height:"100%",cursor:"pointer",userSelect:"none"}}>
-      <div style={{position:"relative",width:"100%",height:"100%",transformStyle:"preserve-3d",transition:"transform 0.45s cubic-bezier(0.4,0,0.2,1)",transform:flipped?"rotateY(180deg)":"rotateY(0deg)"}}>
-        <div style={{position:"absolute",inset:0,backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",background:"linear-gradient(150deg,#1e2d45,#162035)",border:"1.5px solid #2d4a6e",borderRadius:20,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",boxShadow:"0 12px 40px rgba(0,0,0,0.5)"}}>
-          <span style={{fontSize:11,letterSpacing:3,color:"#e63946",fontWeight:800,marginBottom:24,textTransform:"uppercase"}}>{card.category}</span>
-          <p style={{color:"#f0f4f8",fontSize:20,fontWeight:600,textAlign:"center",lineHeight:1.65,margin:0}}>{card.front}</p>
-          <span style={{position:"absolute",bottom:20,color:"#3a5a7a",fontSize:13}}>👆 タップして答えを見る</span>
-        </div>
-        <div style={{position:"absolute",inset:0,backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",transform:"rotateY(180deg)",background:"linear-gradient(150deg,#1a3a2e,#112a20)",border:"1.5px solid #2d6a4f",borderRadius:20,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",boxShadow:"0 12px 40px rgba(0,0,0,0.5)",overflowY:"auto"}}>
-          <span style={{fontSize:11,letterSpacing:3,color:"#22c55e",fontWeight:800,marginBottom:24,textTransform:"uppercase"}}>答え</span>
-          <p style={{color:"#d1fae5",fontSize:18,fontWeight:500,textAlign:"center",lineHeight:1.75,margin:0}}>{card.back}</p>
-        </div>
-      </div>
-    </div>
-  );
+function renderNav(){
+  const nav=document.getElementById("bottom-nav");
+  const tabs=[
+    {id:"home",icon:"📊",label:"ホーム"},
+    {id:"list",icon:"📋",label:"カード"},
+    {id:"study",icon:"🔥",label:"学習",accent:true},
+    {id:"add",icon:"＋",label:"追加"},
+  ];
+  nav.innerHTML=tabs.map(t=>{
+    const active=!t.accent&&!overlay&&currentTab===t.id;
+    return `<button class="nav-btn" onclick="handleNav('${t.id}')">
+      ${t.accent
+        ? `<span class="nav-icon accent">🔥</span>`
+        : `<span class="nav-icon ${active?'active':''}">${t.icon}</span>`}
+      <span class="nav-label ${active||t.accent?'active':''}">${t.label}</span>
+    </button>`;
+  }).join("");
 }
 
-function StudyScreen({allCards,onUpdateStatus,onExit}) {
-  const [filterCat,setFilterCat]=useState("すべて");
-  const [phase,setPhase]=useState("select");
-  const [queue,setQueue]=useState([]);
-  const [idx,setIdx]=useState(0);
-  const [flipped,setFlipped]=useState(false);
-  const touchStart=useRef(null);
-  function startQuiz(){const pool=allCards.filter(c=>(filterCat==="すべて"||c.category===filterCat)&&c.status!=="correct");if(!pool.length){setPhase("done");return;}setQueue(pool);setIdx(0);setFlipped(false);setPhase("quiz");}
-  function judge(status){onUpdateStatus(queue[idx].id,status);const next=idx+1;if(next>=queue.length)setPhase("done");else{setIdx(next);setFlipped(false);}}
-  function handleTouchStart(e){touchStart.current=e.touches[0].clientX;}
-  function handleTouchEnd(e){if(!flipped||touchStart.current===null)return;const dx=e.changedTouches[0].clientX-touchStart.current;if(dx>60)judge("correct");else if(dx<-60)judge("wrong");touchStart.current=null;}
-  const cats=["すべて",...CATEGORIES];
-  if(phase==="select") return (
-    <div style={OV}><div style={OH}><button onClick={onExit} style={BB}>‹</button><span style={OT}>学習モード</span></div>
-    <div style={{flex:1,overflowY:"auto",padding:"24px 20px"}}>
-      <p style={{color:"#94a3b8",fontSize:14,marginBottom:20}}>カテゴリを選んでスタート<br/><span style={{color:"#e63946",fontWeight:700}}>未習得 {allCards.filter(c=>c.status!=="correct").length}枚</span> が出題されます</p>
-      <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:28}}>
-        {cats.map(c=>{const cnt=allCards.filter(card=>(c==="すべて"||card.category===c)&&card.status!=="correct").length;return <button key={c} onClick={()=>setFilterCat(c)} style={{padding:"16px 20px",borderRadius:14,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between",background:filterCat===c?"#e63946":"#1e2d45",border:filterCat===c?"none":"1px solid #2d4a6e",color:"#f0f4f8",fontSize:15,fontWeight:filterCat===c?700:400}}><span>{c}</span><span style={{opacity:.75,fontSize:13}}>{cnt}枚</span></button>;})}
-      </div>
-      <button onClick={startQuiz} style={{...BIG("#e63946"),width:"100%",fontSize:18,padding:"18px"}}>▶ スタート</button>
-    </div></div>
-  );
-  if(phase==="done") return (
-    <div style={{...OV,alignItems:"center",justifyContent:"center"}}>
-      <div style={{textAlign:"center",padding:32}}>
-        <div style={{fontSize:72,marginBottom:16}}>🎉</div>
-        <h2 style={{color:"#22c55e",fontSize:26,marginBottom:8}}>完了！</h2>
-        <p style={{color:"#94a3b8",marginBottom:40,fontSize:16}}>{queue.length}枚を学習しました</p>
-        <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          <button onClick={()=>setPhase("select")} style={{...BIG("#1d4ed8"),width:"100%"}}>もう一度</button>
-          <button onClick={onExit} style={{...BIG("#334155"),width:"100%"}}>ホームに戻る</button>
-        </div>
-      </div>
-    </div>
-  );
-  const current=queue[idx];
-  return (
-    <div style={OV} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-      <div style={{padding:"14px 20px",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
-        <button onClick={onExit} style={BB}>‹</button>
-        <div style={{flex:1,background:"#1e2d45",borderRadius:4,height:6,overflow:"hidden"}}><div style={{width:`${(idx/queue.length)*100}%`,height:"100%",background:"linear-gradient(90deg,#e63946,#f59e0b)",transition:"width 0.3s"}}/></div>
-        <span style={{color:"#64748b",fontSize:14,minWidth:52,textAlign:"right"}}>{idx+1}/{queue.length}</span>
-      </div>
-      <div style={{flex:1,padding:"8px 20px 0"}}><FlipCard card={current} flipped={flipped} onFlip={()=>setFlipped(f=>!f)}/></div>
-      <div style={{padding:"20px",paddingBottom:"calc(20px + env(safe-area-inset-bottom))",flexShrink:0}}>
-        {flipped?(<>
-          <p style={{color:"#3a5a7a",fontSize:12,textAlign:"center",marginBottom:12}}>← スワイプで不正解　　正解でスワイプ →</p>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
-            <button onClick={()=>judge("wrong")} style={JB("#ef4444")}>✗<br/><span style={{fontSize:11}}>不正解</span></button>
-            <button onClick={()=>judge("unsure")} style={JB("#f59e0b")}>△<br/><span style={{fontSize:11}}>あいまい</span></button>
-            <button onClick={()=>judge("correct")} style={JB("#22c55e")}>◎<br/><span style={{fontSize:11}}>正解</span></button>
-          </div>
-        </>):(<button onClick={()=>setFlipped(true)} style={{...BIG("#1e2d45"),width:"100%",border:"1px solid #2d4a6e"}}>答えを見る 👆</button>)}
-      </div>
-    </div>
-  );
+function handleNav(id){
+  if(id==="study"){overlay="study-select";render();return;}
+  if(id==="add"){overlay="add";render();return;}
+  overlay=null;currentTab=id;render();
 }
 
-function CardForm({initial,onSave,onCancel}) {
-  const [front,setFront]=useState(initial?.front||"");
-  const [back,setBack]=useState(initial?.back||"");
-  const [category,setCategory]=useState(initial?.category||CATEGORIES[0]);
-  const ok=front.trim()&&back.trim();
-  return (
-    <div style={OV}><div style={OH}><button onClick={onCancel} style={BB}>‹</button><span style={OT}>{initial?"カードを編集":"カードを追加"}</span></div>
-    <div style={{flex:1,overflowY:"auto",padding:"24px 20px"}}>
-      <div style={{marginBottom:18}}><label style={LB}>カテゴリ</label><select value={category} onChange={e=>setCategory(e.target.value)} style={IP}>{CATEGORIES.map(c=><option key={c}>{c}</option>)}</select></div>
-      <div style={{marginBottom:18}}><label style={LB}>おもて（問題）</label><textarea value={front} onChange={e=>setFront(e.target.value)} rows={4} style={{...IP,resize:"vertical"}} placeholder="例：粉末消火器の主成分は？"/></div>
-      <div style={{marginBottom:32}}><label style={LB}>うら（答え・解説）</label><textarea value={back} onChange={e=>setBack(e.target.value)} rows={4} style={{...IP,resize:"vertical"}} placeholder="例：リン酸アンモニウム"/></div>
-      <button onClick={()=>ok&&onSave({front:front.trim(),back:back.trim(),category})} style={{...BIG(ok?"#e63946":"#334155"),width:"100%",marginBottom:12,opacity:ok?1:0.5}}>保存する</button>
-      <button onClick={onCancel} style={{...BIG("#1e2d45"),width:"100%",border:"1px solid #2d4a6e"}}>キャンセル</button>
-    </div></div>
-  );
+function renderMain(){
+  const el=document.getElementById("main-content");
+  if(currentTab==="home") el.innerHTML=renderHome();
+  else if(currentTab==="list") el.innerHTML=renderList();
 }
 
-function HomeTab({cards,onStartStudy}) {
+// ── ホーム ──
+function renderHome(){
   const total=cards.length,correct=cards.filter(c=>c.status==="correct").length;
   const unsure=cards.filter(c=>c.status==="unsure").length,wrong=cards.filter(c=>c.status==="wrong").length;
   const pct=total?Math.round((correct/total)*100):0;
   const r=52,circ=2*Math.PI*r;
-  return (
-    <div style={{flex:1,overflowY:"auto",padding:"20px 16px 100px"}}>
-      <div style={{background:"linear-gradient(135deg,#1e2d45,#162035)",borderRadius:20,padding:"28px 24px",marginBottom:20,border:"1px solid #2d4a6e",textAlign:"center"}}>
-        <div style={{position:"relative",display:"inline-flex",alignItems:"center",justifyContent:"center",width:130,height:130,marginBottom:16}}>
-          <svg width="130" height="130" style={{position:"absolute",transform:"rotate(-90deg)"}}>
-            <circle cx="65" cy="65" r={r} fill="none" stroke="#0f172a" strokeWidth="10"/>
-            <circle cx="65" cy="65" r={r} fill="none" stroke="#22c55e" strokeWidth="10" strokeDasharray={circ} strokeDashoffset={circ*(1-pct/100)} strokeLinecap="round" style={{transition:"stroke-dashoffset 0.8s ease"}}/>
-          </svg>
-          <div style={{textAlign:"center"}}><div style={{fontSize:30,fontWeight:800,color:"#f0f4f8",lineHeight:1}}>{pct}%</div><div style={{fontSize:11,color:"#64748b"}}>習得率</div></div>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
-          {[{label:"◎ 正解",val:correct,color:"#22c55e"},{label:"△ あいまい",val:unsure,color:"#f59e0b"},{label:"✗ 不正解",val:wrong,color:"#ef4444"},{label:"未学習",val:total-correct-unsure-wrong,color:"#64748b"}].map(s=>(
-            <div key={s.label} style={{background:"#0f172a",borderRadius:10,padding:"10px 14px",textAlign:"left"}}>
-              <div style={{color:s.color,fontSize:11,fontWeight:600,marginBottom:4}}>{s.label}</div>
-              <div style={{color:"#f0f4f8",fontSize:24,fontWeight:800}}>{s.val}<span style={{fontSize:13,color:"#64748b",fontWeight:400}}>枚</span></div>
-            </div>
-          ))}
-        </div>
-        <button onClick={onStartStudy} style={{...BIG("#e63946"),width:"100%",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}><span>🔥</span> 学習スタート</button>
-      </div>
-      <h3 style={{color:"#64748b",fontSize:12,fontWeight:700,letterSpacing:2,marginBottom:12}}>カテゴリ別進捗</h3>
-      <div style={{display:"flex",flexDirection:"column",gap:10}}>
-        {CATEGORIES.map(cat=>{
-          const cc=cards.filter(c=>c.category===cat);if(!cc.length)return null;
-          const done=cc.filter(c=>c.status==="correct").length,p=Math.round((done/cc.length)*100);
-          return (<div key={cat} style={{background:"#1e2d45",borderRadius:12,padding:"14px 16px",border:"1px solid #2d4a6e"}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{color:"#f0f4f8",fontSize:14}}>{cat}</span><span style={{color:"#22c55e",fontSize:13,fontWeight:700}}>{p}%</span></div>
-            <div style={{background:"#0f172a",borderRadius:4,height:6,overflow:"hidden"}}><div style={{width:`${p}%`,height:"100%",background:"linear-gradient(90deg,#e63946,#22c55e)",transition:"width 0.5s"}}/></div>
-            <div style={{color:"#4a6a8a",fontSize:11,marginTop:6}}>{done}/{cc.length}枚</div>
-          </div>);
-        })}
+  const stats=[
+    {label:"◎ 正解",val:correct,color:"#22c55e"},
+    {label:"△ あいまい",val:unsure,color:"#f59e0b"},
+    {label:"✗ 不正解",val:wrong,color:"#ef4444"},
+    {label:"未学習",val:total-correct-unsure-wrong,color:"#64748b"},
+  ];
+  return `
+  <div class="progress-box">
+    <div style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:130px;height:130px;margin-bottom:16px;">
+      <svg width="130" height="130" style="position:absolute;transform:rotate(-90deg)">
+        <circle cx="65" cy="65" r="${r}" fill="none" stroke="#0f172a" stroke-width="10"/>
+        <circle cx="65" cy="65" r="${r}" fill="none" stroke="#22c55e" stroke-width="10"
+          stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-pct/100)}" stroke-linecap="round"
+          style="transition:stroke-dashoffset 0.8s ease"/>
+      </svg>
+      <div style="text-align:center">
+        <div style="font-size:30px;font-weight:800;color:#f0f4f8;line-height:1">${pct}%</div>
+        <div style="font-size:11px;color:#64748b">習得率</div>
       </div>
     </div>
-  );
+    <div class="stat-grid">
+      ${stats.map(s=>`<div class="stat-card"><div class="stat-label" style="color:${s.color}">${s.label}</div><div class="stat-val">${s.val}<span class="stat-unit">枚</span></div></div>`).join("")}
+    </div>
+    <button class="big-btn btn-red" style="display:flex;align-items:center;justify-content:center;gap:10px;font-size:18px" onclick="handleNav('study')">🔥 学習スタート</button>
+  </div>
+  <p class="section-title">カテゴリ別進捗</p>
+  ${CATEGORIES.map(cat=>{
+    const cc=cards.filter(c=>c.category===cat);if(!cc.length)return"";
+    const done=cc.filter(c=>c.status==="correct").length,p=Math.round((done/cc.length)*100);
+    return `<div class="cat-progress">
+      <div class="cat-header"><span class="cat-name">${cat}</span><span class="cat-pct">${p}%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${p}%"></div></div>
+      <div class="cat-count">${done}/${cc.length}枚</div>
+    </div>`;
+  }).join("")}`;
 }
 
-function CardListTab({cards,onEdit,onDelete,onResetAll}) {
-  const [filterCat,setFilterCat]=useState("すべて");
-  const [filterStatus,setFilterStatus]=useState("すべて");
-  const cats=["すべて",...CATEGORIES],statuses=["すべて",...Object.keys(STATUS)];
-  const filtered=cards.filter(c=>(filterCat==="すべて"||c.category===filterCat)&&(filterStatus==="すべて"||c.status===filterStatus));
-  return (
-    <div style={{flex:1,overflowY:"hidden",display:"flex",flexDirection:"column"}}>
-      <div style={{flexShrink:0,borderBottom:"1px solid #1e2d45"}}>
-        <div style={{overflowX:"auto",padding:"10px 16px 0"}}><div style={{display:"flex",gap:8,width:"max-content",paddingBottom:10}}>{cats.map(c=><button key={c} onClick={()=>setFilterCat(c)} style={{padding:"8px 16px",borderRadius:20,border:"none",cursor:"pointer",fontSize:13,whiteSpace:"nowrap",background:filterCat===c?"#e63946":"#1e2d45",color:filterCat===c?"#fff":"#94a3b8",fontWeight:filterCat===c?700:400}}>{c}</button>)}</div></div>
-        <div style={{overflowX:"auto",padding:"0 16px 10px"}}><div style={{display:"flex",gap:6,width:"max-content"}}>{statuses.map(s=><button key={s} onClick={()=>setFilterStatus(s)} style={{padding:"5px 12px",borderRadius:20,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",border:filterStatus===s?"none":"1px solid #2d4a6e",background:filterStatus===s?"#2d4a6e":"transparent",color:filterStatus===s?"#f0f4f8":"#64748b"}}>{s==="すべて"?"すべて":STATUS[s].label}</button>)}</div></div>
+// ── カード一覧 ──
+function renderList(){
+  const cats=["すべて",...CATEGORIES];
+  const statuses=["すべて",...Object.keys(STATUS)];
+  const filtered=cards.filter(c=>(listFilterCat==="すべて"||c.category===listFilterCat)&&(listFilterStatus==="すべて"||c.status===listFilterStatus));
+  return `
+  <div class="filter-row" style="padding-left:0;padding-right:0;margin:0 -16px;">
+    <div class="filter-inner" style="padding-left:16px;padding-right:16px;">
+      ${cats.map(c=>`<button class="filter-btn ${listFilterCat===c?'active':''}" onclick="setListCat('${c}')">${c}</button>`).join("")}
+    </div>
+  </div>
+  <div class="filter-row" style="padding-left:0;padding-right:0;margin:0 -16px 8px;">
+    <div class="filter-inner" style="padding-left:16px;padding-right:16px;">
+      ${statuses.map(s=>`<button class="filter-btn ${listFilterStatus===s?'status-active':'status-inactive'}" onclick="setListStatus('${s}')">${s==="すべて"?"すべて":STATUS[s].label}</button>`).join("")}
+    </div>
+  </div>
+  <div class="list-header">
+    <span class="list-count">${filtered.length}枚</span>
+    <button class="reset-btn" onclick="resetAll()">全リセット</button>
+  </div>
+  ${filtered.map(card=>{
+    const st=STATUS[card.status]||STATUS.new;
+    return `<div class="card-item" style="border-left-color:${st.color}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="flex:1;min-width:0">
+          <div class="tags">
+            <span class="tag-cat">${card.category}</span>
+            <span class="tag-status" style="color:${st.color}">${st.label}</span>
+          </div>
+          <p class="card-q">${card.front}</p>
+          <p class="card-a">${card.back}</p>
+        </div>
+        <div class="card-actions">
+          <button class="icon-btn" onclick="editCard(${card.id})">✏️</button>
+          <button class="icon-btn" onclick="deleteCard(${card.id})">🗑️</button>
+        </div>
       </div>
-      <div style={{overflowY:"auto",flex:1,padding:"10px 16px 100px"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-          <span style={{color:"#64748b",fontSize:12}}>{filtered.length}枚</span>
-          <button onClick={onResetAll} style={{background:"none",border:"1px solid #334155",color:"#64748b",borderRadius:6,padding:"5px 12px",fontSize:12,cursor:"pointer"}}>全リセット</button>
-        </div>
-        <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          {filtered.map(card=>{const st=STATUS[card.status]||STATUS.new;return (
-            <div key={card.id} style={{background:"#1e2d45",borderRadius:14,padding:"14px 16px",border:"1px solid #2d4a6e",borderLeft:`4px solid ${st.color}`}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",gap:6,marginBottom:6,flexWrap:"wrap"}}>
-                    <span style={{fontSize:10,background:"#0f172a",color:"#94a3b8",padding:"2px 8px",borderRadius:10}}>{card.category}</span>
-                    <span style={{fontSize:10,color:st.color}}>{st.label}</span>
-                  </div>
-                  <p style={{color:"#f0f4f8",margin:"0 0 4px",fontSize:14,fontWeight:500,lineHeight:1.5}}>{card.front}</p>
-                  <p style={{color:"#94a3b8",margin:0,fontSize:13,lineHeight:1.4}}>{card.back}</p>
-                </div>
-                <div style={{display:"flex",flexDirection:"column",gap:4,marginLeft:12,flexShrink:0}}>
-                  <button onClick={()=>onEdit(card)} style={IB}>✏️</button>
-                  <button onClick={()=>onDelete(card.id)} style={IB}>🗑️</button>
-                </div>
-              </div>
-            </div>
-          );})}
-          {!filtered.length&&<div style={{textAlign:"center",color:"#4a6a8a",padding:"60px 20px"}}>カードがありません。</div>}
-        </div>
+    </div>`;
+  }).join("")}
+  ${!filtered.length?`<div style="text-align:center;color:#4a6a8a;padding:60px 20px">カードがありません。</div>`:""}`;
+}
+
+function setListCat(v){listFilterCat=v;render();}
+function setListStatus(v){listFilterStatus=v;render();}
+
+// ── オーバーレイ ──
+function renderOverlay(){
+  const el=document.getElementById("main-content");
+  let html="";
+  if(overlay==="study-select") html=renderStudySelect();
+  else if(overlay==="study-quiz") html=renderStudyQuiz();
+  else if(overlay==="study-done") html=renderStudyDone();
+  else if(overlay==="add") html=renderCardForm(null);
+  else if(overlay&&overlay.type==="edit") html=renderCardForm(overlay.card);
+  el.innerHTML=`<div class="overlay">${html}</div>`;
+  // スワイプ
+  if(overlay==="study-quiz"){
+    const area=document.querySelector(".flip-area");
+    if(area){
+      area.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;},{passive:true});
+      area.addEventListener("touchend",e=>{
+        if(!studyFlipped||touchStartX===null)return;
+        const dx=e.changedTouches[0].clientX-touchStartX;
+        if(dx>60)judge("correct");else if(dx<-60)judge("wrong");
+        touchStartX=null;
+      },{passive:true});
+    }
+  }
+}
+
+// ── 学習：カテゴリ選択 ──
+function renderStudySelect(){
+  const cats=["すべて",...CATEGORIES];
+  const remaining=cards.filter(c=>c.status!=="correct").length;
+  return `<div class="overlay-header">
+    <button class="back-btn" onclick="closeOverlay()">‹</button>
+    <span class="overlay-title">学習モード</span>
+  </div>
+  <div class="overlay-content">
+    <p class="info-row">カテゴリを選んでスタート<br><span>未習得 ${remaining}枚</span> が出題されます</p>
+    <div class="cat-select-list">
+      ${cats.map(c=>{
+        const cnt=cards.filter(card=>(c==="すべて"||card.category===c)&&card.status!=="correct").length;
+        return `<button class="cat-select-btn" style="background:${studyCat===c?"#e63946":"#1e2d45"};border:${studyCat===c?"none":"1px solid #2d4a6e"};color:#f0f4f8;font-weight:${studyCat===c?700:400}" onclick="selectStudyCat('${c}')">
+          <span>${c}</span><span style="opacity:.75;font-size:13px">${cnt}枚</span>
+        </button>`;
+      }).join("")}
+    </div>
+    <button class="big-btn btn-red" style="font-size:18px;padding:18px" onclick="startQuiz()">▶ スタート</button>
+  </div>`;
+}
+
+function selectStudyCat(c){studyCat=c;render();}
+
+function startQuiz(){
+  const pool=cards.filter(c=>(studyCat==="すべて"||c.category===studyCat)&&c.status!=="correct");
+  if(!pool.length){overlay="study-done";render();return;}
+  studyQueue=pool;studyIdx=0;studyFlipped=false;overlay="study-quiz";render();
+}
+
+// ── 学習：クイズ ──
+function renderStudyQuiz(){
+  const card=studyQueue[studyIdx];
+  const pct=(studyIdx/studyQueue.length)*100;
+  return `<div class="quiz-header">
+    <button class="back-btn" onclick="closeOverlay()">‹</button>
+    <div class="quiz-progress-bar"><div class="quiz-progress-fill" style="width:${pct}%"></div></div>
+    <span class="quiz-count">${studyIdx+1}/${studyQueue.length}</span>
+  </div>
+  <div class="flip-area" onclick="flipCard()">
+    <div class="flip-card ${studyFlipped?'flipped':''}">
+      <div class="flip-face flip-front">
+        <span class="flip-cat">${card.category}</span>
+        <p class="flip-q">${card.front}</p>
+        <span class="flip-hint">👆 タップして答えを見る</span>
+      </div>
+      <div class="flip-face flip-back">
+        <span class="flip-ans-label">答え</span>
+        <p class="flip-ans">${card.back}</p>
       </div>
     </div>
-  );
+  </div>
+  <div class="judge-area">
+    ${studyFlipped?`
+    <p class="judge-hint">← スワイプで不正解　　正解でスワイプ →</p>
+    <div class="judge-grid">
+      <button class="judge-btn" style="background:#ef444422;border:2px solid #ef4444;color:#ef4444" onclick="judge('wrong')">✗<br><span style="font-size:11px">不正解</span></button>
+      <button class="judge-btn" style="background:#f59e0b22;border:2px solid #f59e0b;color:#f59e0b" onclick="judge('unsure')">△<br><span style="font-size:11px">あいまい</span></button>
+      <button class="judge-btn" style="background:#22c55e22;border:2px solid #22c55e;color:#22c55e" onclick="judge('correct')">◎<br><span style="font-size:11px">正解</span></button>
+    </div>`
+    :`<button class="big-btn btn-dark" onclick="flipCard()">答えを見る 👆</button>`}
+  </div>`;
 }
 
-function App() {
-  const [cards,setCards]=useState(loadCards);
-  const [tab,setTab]=useState("home");
-  const [overlay,setOverlay]=useState(null);
-  useEffect(()=>{saveCards(cards);},[cards]);
-  function addCard({front,back,category}){setCards(p=>[...p,{id:Date.now(),front,back,category,status:"new"}]);setOverlay(null);setTab("list");}
-  function updateCard({front,back,category}){setCards(p=>p.map(c=>c.id===overlay.card.id?{...c,front,back,category}:c));setOverlay(null);}
-  function deleteCard(id){if(window.confirm("このカードを削除しますか？"))setCards(p=>p.filter(c=>c.id!==id));}
-  function updateStatus(id,status){setCards(p=>p.map(c=>c.id===id?{...c,status}:c));}
-  function resetAll(){if(window.confirm("全カードの学習状況をリセットしますか？"))setCards(p=>p.map(c=>({...c,status:"new"})));}
-  if(overlay==="study")return <StudyScreen allCards={cards} onUpdateStatus={updateStatus} onExit={()=>setOverlay(null)}/>;
-  if(overlay==="add")return <CardForm onSave={addCard} onCancel={()=>setOverlay(null)}/>;
-  if(overlay?.type==="edit")return <CardForm initial={overlay.card} onSave={updateCard} onCancel={()=>setOverlay(null)}/>;
-  const TABS=[{id:"home",icon:"📊",label:"ホーム"},{id:"list",icon:"📋",label:"カード"},{id:"study",icon:"🔥",label:"学習",action:()=>setOverlay("study"),accent:true},{id:"add",icon:"＋",label:"追加",action:()=>setOverlay("add")}];
-  return (
-    <div style={{height:"100dvh",display:"flex",flexDirection:"column",background:"#0f172a",fontFamily:"'Noto Sans JP','Hiragino Sans',sans-serif",color:"#f0f4f8",overflow:"hidden",maxWidth:480,margin:"0 auto"}}>
-      <div style={{padding:"16px 20px 12px",borderBottom:"1px solid #1e2d45",flexShrink:0}}>
-        <h1 style={{margin:0,fontSize:19,fontWeight:800,color:"#f0f4f8"}}>🔥 消防設備士 乙6</h1>
-        <p style={{margin:0,fontSize:11,color:"#4a6a8a",marginTop:2}}>単語帳 — 全{cards.length}問</p>
-      </div>
-      <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-        {tab==="home"&&<HomeTab cards={cards} onStartStudy={()=>setOverlay("study")}/>}
-        {tab==="list"&&<CardListTab cards={cards} onEdit={card=>setOverlay({type:"edit",card})} onDelete={deleteCard} onResetAll={resetAll}/>}
-      </div>
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"rgba(15,23,42,0.97)",backdropFilter:"blur(16px)",borderTop:"1px solid #1e2d45",display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",paddingBottom:"env(safe-area-inset-bottom)",zIndex:100}}>
-        {TABS.map(t=>{const active=!t.action&&tab===t.id;return(
-          <button key={t.id} onClick={t.action||(()=>setTab(t.id))} style={{background:"none",border:"none",cursor:"pointer",padding:"12px 4px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-            {t.accent?<span style={{fontSize:20,background:"#e63946",width:44,height:44,borderRadius:22,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:2}}>{t.icon}</span>:<span style={{fontSize:22,color:active?"#e63946":"#4a6a8a",lineHeight:1}}>{t.icon}</span>}
-            <span style={{fontSize:10,color:t.accent?"#e63946":active?"#e63946":"#4a6a8a",fontWeight:active||t.accent?700:400}}>{t.label}</span>
-          </button>
-        );})}
-      </div>
+function flipCard(){studyFlipped=!studyFlipped;render();}
+
+function judge(status){
+  cards=cards.map(c=>c.id===studyQueue[studyIdx].id?{...c,status}:c);
+  saveCards();
+  const next=studyIdx+1;
+  if(next>=studyQueue.length){overlay="study-done";render();}
+  else{studyIdx=next;studyFlipped=false;render();}
+}
+
+// ── 学習：完了 ──
+function renderStudyDone(){
+  return `<div class="overlay-header">
+    <button class="back-btn" onclick="closeOverlay()">‹</button>
+    <span class="overlay-title">完了</span>
+  </div>
+  <div class="done-screen">
+    <div class="done-emoji">🎉</div>
+    <h2 class="done-title">完了！</h2>
+    <p class="done-msg">${studyQueue.length}枚を学習しました</p>
+    <button class="big-btn btn-blue" onclick="overlay='study-select';render()">もう一度</button>
+    <button class="big-btn btn-gray" onclick="closeOverlay()">ホームに戻る</button>
+  </div>`;
+}
+
+// ── カード追加・編集 ──
+function renderCardForm(card){
+  const cats=CATEGORIES;
+  return `<div class="overlay-header">
+    <button class="back-btn" onclick="closeOverlay()">‹</button>
+    <span class="overlay-title">${card?"カードを編集":"カードを追加"}</span>
+  </div>
+  <div class="overlay-content">
+    <div class="form-group">
+      <label class="form-label">カテゴリ</label>
+      <select id="f-cat" class="form-input">
+        ${cats.map(c=>`<option ${card&&card.category===c?'selected':''}>${c}</option>`).join("")}
+      </select>
     </div>
-  );
+    <div class="form-group">
+      <label class="form-label">おもて（問題）</label>
+      <textarea id="f-front" class="form-input" rows="4" style="resize:vertical" placeholder="例：粉末消火器の主成分は？">${card?card.front:""}</textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:32px">
+      <label class="form-label">うら（答え・解説）</label>
+      <textarea id="f-back" class="form-input" rows="4" style="resize:vertical" placeholder="例：リン酸アンモニウム">${card?card.back:""}</textarea>
+    </div>
+    <button class="big-btn btn-red" onclick="saveForm(${card?card.id:'null'})">保存する</button>
+    <button class="big-btn btn-dark" onclick="closeOverlay()">キャンセル</button>
+  </div>`;
 }
 
-const OV={position:"fixed",inset:0,background:"#0f172a",zIndex:200,display:"flex",flexDirection:"column",fontFamily:"'Noto Sans JP','Hiragino Sans',sans-serif"};
-const OH={display:"flex",alignItems:"center",padding:"16px 20px",borderBottom:"1px solid #1e2d45",flexShrink:0};
-const OT={color:"#f0f4f8",fontWeight:700,fontSize:17,marginLeft:12};
-const BB={background:"none",border:"none",color:"#94a3b8",fontSize:26,cursor:"pointer",padding:"4px 8px",lineHeight:1};
-const LB={display:"block",color:"#94a3b8",fontSize:13,marginBottom:8,fontWeight:500};
-const IP={width:"100%",background:"#1e2d45",border:"1px solid #2d4a6e",borderRadius:10,padding:"14px",color:"#f0f4f8",fontSize:16,boxSizing:"border-box",outline:"none",fontFamily:"inherit"};
-const IB={background:"none",border:"none",cursor:"pointer",padding:"10px",borderRadius:8,lineHeight:1,fontSize:20};
-function BIG(bg){return{background:bg,color:"#fff",border:"none",borderRadius:14,padding:"17px 24px",fontSize:16,fontWeight:700,cursor:"pointer"};}
-function JB(color){return{background:`${color}22`,border:`2px solid ${color}`,color,borderRadius:14,padding:"16px 8px",fontSize:24,fontWeight:800,cursor:"pointer",lineHeight:1.3};}
+function saveForm(id){
+  const front=document.getElementById("f-front").value.trim();
+  const back=document.getElementById("f-back").value.trim();
+  const category=document.getElementById("f-cat").value;
+  if(!front||!back)return;
+  if(id){cards=cards.map(c=>c.id===id?{...c,front,back,category}:c);}
+  else{cards=[...cards,{id:Date.now(),front,back,category,status:"new"}];}
+  saveCards();overlay=null;currentTab="list";render();
+}
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
-if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("./sw.js").catch(()=>{});});}
+function editCard(id){const card=cards.find(c=>c.id===id);if(card){overlay={type:"edit",card};render();}}
+function deleteCard(id){if(confirm("このカードを削除しますか？")){cards=cards.filter(c=>c.id!==id);saveCards();render();}}
+function resetAll(){if(confirm("全カードの学習状況をリセットしますか？")){cards=cards.map(c=>({...c,status:"new"}));saveCards();render();}}
+function closeOverlay(){overlay=null;render();}
+
+// ── 起動 ──
+render();
+
+// ── Service Worker ──
+if("serviceWorker" in navigator){
+  window.addEventListener("load",function(){
+    navigator.serviceWorker.register("./sw.js").catch(function(){});
+  });
+}
 </script>
 </body>
 </html>

@@ -1,10 +1,8 @@
 {
   "name": "消防設備士乙6 単語帳",
   "short_name": "乙6単語帳",
-  "description": "消防設備士乙種6類（消火器）試験対策単語帳アプリ",
   "start_url": ".",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "icons": [
